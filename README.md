@@ -2,7 +2,7 @@
 
 Particle in Cell Method, written in C++
 
-## Free Electrons Moving Around a Cloud of Oxigen Ions
+## Free Electrons Moving Around a Cloud of Oxygen Ions
 
 ![number density](img/box.gif)
 ![energy](img/box.png)
