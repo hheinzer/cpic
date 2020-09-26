@@ -46,20 +46,53 @@ double Species::get_kinetic_energy() const
 	return 0.5*m_s*E_kin;
 }
 
-void Species::add_particle(const Vector3d &x, const Vector3d &v)
+double Species::get_maxwellian_velocity_magnitude(double T) const
 {
-	add_particle(x, v, w_mp0);
+	double v_th = sqrt(2*K*T/m_s);
+
+	const double v_min = -6*v_th;
+	const double v_max =  6*v_th;
+
+	Vector3d v;
+	for(int dim : {X, Y, Z}) {
+		while(true) {
+			v(dim) = v_min + rng()*(v_max - v_min);
+			double f = exp(-v(dim)*v(dim)/(v_th*v_th));
+			if (f > rng()) break;
+		};
+	}
+
+	return v.norm();
 }
 
-void Species::add_particle(const Vector3d &x, const Vector3d &v, double w_mp)
+Vector3d Species::get_maxwellian_velocity(double T) const
+{
+	double v_mag = get_maxwellian_velocity_magnitude(T);
+
+	double t = 2*PI*rng();
+	double r = -1 + 2*rng();
+	double a = sqrt(1 - r*r);
+
+	Vector3d v_dir(r, a*cos(t), a*sin(t));
+
+	return v_mag*v_dir;
+}
+
+void Species::add_particle(const Vector3d &x, const Vector3d &v)
+{
+	add_particle(x, v, domain.get_time_step(), w_mp0);
+}
+
+void Species::add_particle(const Vector3d &x, const Vector3d &v, double dt, double w_mp)
 {
 	Vector3d l = domain.x_to_l(x);
 	Vector3d E_p = domain.gather(domain.E, l);
 	Vector3d dv = rho_s/m_s*E_p*0.5*domain.get_time_step();
-	particles.emplace_back(x, v - dv, w_mp);
+	particles.emplace_back(Particle(x, v - dv, dt, w_mp));
 }
 
-void Species::add_particle_box(const Vector3d &x1, const Vector3d &x2, double n)
+void Species::add_cold_box(const Vector3d &x1, const Vector3d &x2, double n,
+		const Vector3d &v_drift)
 {
 	double V_box = (x2 - x1).prod();
 	double n_real = n*V_box;
@@ -70,23 +103,56 @@ void Species::add_particle_box(const Vector3d &x1, const Vector3d &x2, double n)
 		do {
 			x = x1.array() + rng(3).array()*(x2 - x1).array();
 		} while(!domain.is_inside(x));
-		add_particle(x, Vector3d::Zero(), w_mp0);
+		add_particle(x, v_drift);
+	}
+}
+
+void Species::add_warm_box(const Vector3d &x1, const Vector3d &x2, double n,
+		const Vector3d &v_drift, double T)
+{
+	double V_box = (x2 - x1).prod();
+	double n_real = n*V_box;
+	int n_sim = (int)(n_real/w_mp0);
+
+	for (int p = 0; p < n_sim; ++p) {
+		Vector3d x;
+		do {
+			x = x1.array() + rng(3).array()*(x2 - x1).array();
+		} while(!domain.is_inside(x));
+
+		Vector3d v_M = get_maxwellian_velocity(T);
+
+		add_particle(x, v_drift + v_M);
 	}
 }
 
 void Species::push_particles_leapfrog()
 {
-	double dt = domain.get_time_step();
-
 	for(Particle &p : particles) {
+		p.dt += domain.get_time_step();
+
 		Vector3d l = domain.x_to_l(p.x);
 		Vector3d E_p = domain.gather(domain.E, l);
 
-		p.v += E_p*(dt*rho_s/m_s);
-		p.x += p.v*dt;
+		p.v += E_p*(p.dt*rho_s/m_s);
 
-		while (!domain.is_inside(p.x) && p.w_mp > 0)
-			domain.apply_boundary_conditions(p);
+		int n_bounces = 0;
+
+		while (p.dt > 0 && p.w_mp > 0) {
+			Vector3d x_old = p.x;
+			p.x += p.v*p.dt;
+
+			if (!domain.is_inside(p.x)) {
+				domain.apply_boundary_conditions(*this, x_old, p);
+				continue;
+			}
+
+			p.dt = 0;
+
+			if (++n_bounces > 10) {
+				p.w_mp = 0;
+			}
+		}
 	}
 }
 
@@ -112,6 +178,15 @@ void Species::calc_number_density()
 	n = n.array()/domain.V_node.array();
 }
 
+void Species::clear_moments()
+{
+	n_sum.setZero();
+	nv_sum.setZero();
+	nuu_sum.setZero();
+	nvv_sum.setZero();
+	nww_sum.setZero();
+}
+
 void Species::sample_moments()
 {
 	for(const Particle &p : particles) {
@@ -127,32 +202,33 @@ void Species::sample_moments()
 void Species::calc_gas_properties()
 {
 	for (int u = 0; u < domain.n_nodes; ++u) {
-		double count = n_sum(u);
-		if (count <= 0) {
+		double n_u = n_sum(u);
+
+		if (n_u <= 0) {
 			v_stream.row(u).setZero();
 			T(u) = 0;
 			continue;
 		}
 
-		v_stream.row(u) = nv_sum.row(u)/count;
+		v_stream.row(u) = nv_sum.row(u)/n_u;
 
 		double u_mean = v_stream(u, X);
 		double v_mean = v_stream(u, Y);
 		double w_mean = v_stream(u, Z);
 
-		double u2_mean = nuu_sum(u)/count;
-		double v2_mean = nvv_sum(u)/count;
-		double w2_mean = nww_sum(u)/count;
+		double u2_mean = nuu_sum(u)/n_u;
+		double v2_mean = nvv_sum(u)/n_u;
+		double w2_mean = nww_sum(u)/n_u;
 
 		double uu = u2_mean - u_mean*u_mean;
 		double vv = v2_mean - v_mean*v_mean;
 		double ww = w2_mean - w_mean*w_mean;
 
-		T(u) = m_s/(2*K)*(uu + vv + ww);
+		T(u) = m_s/(3*K)*(uu + vv + ww);
 	}
 }
 
-void Species::calc_macroparticle_density()
+void Species::calc_macroparticle_count()
 {
 	mp_count.setZero();
 	for(const Particle &p : particles) {
@@ -161,42 +237,9 @@ void Species::calc_macroparticle_density()
 	}
 }
 
-void Species::clear_samples()
-{
-	n_sum.setZero();
-	nv_sum.setZero();
-	nuu_sum.setZero();
-	nvv_sum.setZero();
-	nww_sum.setZero();
-}
-
 void Species::update_mean()
 {
 	n_mean = (n.array() + n_samples*n_mean.array())/(n_samples + 1);
 	++n_samples;
 }
 
-double Species::sample_thermal_vel(double T) const
-{
-	double v_th = sqrt(2*K*T/m_s);
-	Vector3d v_M = v_th*(rng(3, M).rowwise().sum().array() - M/2.0)*sqrt(6.0/M);
-	return v_M.norm();
-}
-
-Vector3d Species::sample_isothermal_vel(double T) const
-{
-	double theta = 2*PI*rng();
-	double r = -1 + 2*rng();
-	double a = sqrt(1 - r*r);
-	Vector3d d(r, cos(theta)*a, sin(theta)*a);
-	double v_th = sample_thermal_vel(T);
-	return v_th*d;
-}
-
-Vector3d Species::sample_reflected_vel(const Vector3d &d, double v_mag1, double T) const
-{
-	double v_th = sample_thermal_vel(T);
-	static const double a_th = 1;
-	double v_mag2 = v_mag1 + a_th*(v_th - v_mag1);
-	return v_mag2*d;
-}

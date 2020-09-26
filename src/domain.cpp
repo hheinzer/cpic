@@ -21,9 +21,10 @@ Domain::Domain(string prefix, int ni, int nj, int nk) :
 	wtime_start = chrono::high_resolution_clock::now();
 
 	V_node = VectorXd::Zero(n_nodes);
-	rho = VectorXd::Zero(n_nodes);
-	phi = VectorXd::Zero(n_nodes);
-	E = MatrixXd::Zero(n_nodes, 3);
+	rho    = VectorXd::Zero(n_nodes);
+	phi    = VectorXd::Zero(n_nodes);
+	E      = MatrixXd::Zero(n_nodes, 3);
+	n_e    = VectorXd::Zero(n_nodes);
 }
 
 void Domain::set_dimensions(const Vector3d &x_min, const Vector3d &x_max)
@@ -34,14 +35,16 @@ void Domain::set_dimensions(const Vector3d &x_min, const Vector3d &x_max)
 	calc_node_volume();
 }
 
-void Domain::set_boundary_condition(BoundarySide side, BC bc)
+void Domain::set_bc_at(BoundarySide side, BC bc)
 {
-	if (side == Xmin || side == Xmax) {
-		bc.set_delta(del_x(X));
-	} else if (side == Ymin || side == Ymax) {
-		bc.set_delta(del_x(Y));
-	} else if (side == Zmin || side == Zmax) {
-		bc.set_delta(del_x(Z));
+	if (bc.field_bc_type == FieldBCtype::Neumann) {
+		if ((side == Xmin || side == Xmax)) {
+			bc.set_delta(del_x(X));
+		} else if (side == Ymin || side == Ymax) {
+			bc.set_delta(del_x(Y));
+		} else if (side == Zmin || side == Zmax) {
+			bc.set_delta(del_x(Z));
+		}
 	}
 
 	this->bc[side] = make_unique<BC>(bc);
@@ -97,7 +100,7 @@ void Domain::scatter(VectorXd &f, const Vector3d &l, double value)
 	f(at(i + 1,j + 1,k + 1)) += value*(    di)*(    dj)*(    dk);
 }
 
-void Domain::scatter(MatrixXd &f, const Vector3d &l, const VectorXd &value)
+void Domain::scatter(MatrixXd &f, const Vector3d &l, const Vector3d &value)
 {
 	int i = (int)l(X);
 	double di = l(X) - i;
@@ -148,30 +151,31 @@ void Domain::calc_charge_density(std::vector<Species> &species)
 	}
 }
 
-void Domain::apply_boundary_conditions(Particle &p)
+void Domain::apply_boundary_conditions(const Species &sp, const Vector3d &x_old,
+		Particle &p) const
 {
 	for(int dim : {X, Y, Z}) {
 		if (p.x(dim) < x_min(dim)) {
 			int side = 2*dim;
-			ParticleBCtype type = bc.at(side)->particle_bc_type;
-			eval_particle_BC(type, x_min(dim), p.x(dim), p.v(dim), p.w_mp);
+			Vector3d n = Vector3d::Unit(dim);
+			eval_particle_BC(sp, side, x_min, x_old, p, dim, n);
 		} else if (x_max(dim) < p.x(dim)) {
 			int side = 2*dim + 1;
-			ParticleBCtype type = bc.at(side)->particle_bc_type;
-			eval_particle_BC(type, x_max(dim), p.x(dim), p.v(dim), p.w_mp);
+			Vector3d n = -Vector3d::Unit(dim);
+			eval_particle_BC(sp, side, x_max, x_old, p, dim, n);
 		}
 	}
 }
 
-void Domain::eval_field_BC(BoundarySide side, VectorXd &b0,
-		std::vector<T> &coeffs, int u, int v)
+void Domain::eval_field_BC(BoundarySide side, VectorXd &b0, std::vector<T> &coeffs,
+		int u, int v) const
 {
 	switch (bc.at(side)->field_bc_type) {
-		case Dirichlet:
+		case FieldBCtype::Dirichlet:
 			coeffs.push_back(T(u, u, 1));
 			b0(u) = bc.at(side)->get_value();
 			break;
-		case Neumann:
+		case FieldBCtype::Neumann:
 			coeffs.push_back(T(u, u,  1));
 			coeffs.push_back(T(u, v, -1));
 			b0(u) = bc.at(side)->get_value();
@@ -219,18 +223,50 @@ void Domain::calc_node_volume()
 	}
 }
 
-void Domain::eval_particle_BC(ParticleBCtype type, const double &X, double &x,
-		double &v, double &w_mp)
+void Domain::eval_particle_BC(const Species &sp, int side, const Vector3d &X,
+		const Vector3d &x_old, Particle &p, int dim, const Vector3d &n) const
 {
-	switch (type) {
-		case Reflective:
-			x = 2*X - x;
-			v *= -1;
+	switch (bc.at(side)->particle_bc_type) {
+		case ParticleBCtype::Symmetric:
+		case ParticleBCtype::Specular:
+			p.x(dim) = 2*X(dim) - p.x(dim);
+			p.v(dim) *= -1;
 			break;
-		case Open:
-			w_mp = 0;
+		case ParticleBCtype::Open:
+			p.w_mp = 0;
 			break;
+		case ParticleBCtype::Diffuse: {
+				double t = (X(dim) - x_old(dim))/(p.x(dim) - x_old(dim));
+				double dt_rem = (1 - t)*p.dt;
+				p.dt -= dt_rem;
+
+				p.x = x_old + 0.999*t*(p.x - x_old);
+				double v_mag1 = p.v.norm();
+
+				double v_th = sp.get_maxwellian_velocity_magnitude(bc.at(side)->T);
+				double v_mag2 = v_mag1 + bc.at(side)->a_th*(v_th - v_mag1);
+				p.v = v_mag2*get_diffuse_vector(n);
+				break;
+			}
 	}
+}
+
+Vector3d Domain::get_diffuse_vector(const Vector3d &n) const
+{
+	/* random vector that follows the cosine law */
+	double sin_theta = rng();
+	double cos_theta = sqrt(1 - sin_theta*sin_theta);
+	double psi = 2*PI*rng();
+
+	Vector3d t1;
+	if (n.cross(Vector3d::UnitX()).norm() != 0) {
+		t1 = n.cross(Vector3d::UnitX());
+	} else {
+		t1 = n.cross(Vector3d::UnitY());
+	}
+	Vector3d t2 = n.cross(t1);
+
+	return sin_theta*(cos(psi)*t1 + sin(psi)*t2) + cos_theta*n;
 }
 
 void Domain::print_info(std::vector<Species> &species) const
@@ -283,6 +319,7 @@ void Domain::save_fields(std::vector<Species> &species) const
 {
 	stringstream ss;
 	ss << prefix << "_" << setfill('0') << setw(6) << get_iter() << ".vti";
+
 	ofstream out(ss.str());
 	if (!out.is_open()) {
 		cerr << "Could not open '" << ss.str() << "'" << endl;
@@ -318,9 +355,12 @@ void Domain::save_fields(std::vector<Species> &species) const
 	out << E;
 	out << "</DataArray>\n";
 
-	for (Species &sp : species) {
-		sp.calc_gas_properties();
+	out << "<DataArray Name=\"n.fluid_e-\" NumberOfComponents=\"1\" "
+		<< "format=\"ascii\" type=\"Float64\">\n";
+	out << n_e;
+	out << "</DataArray>\n";
 
+	for (const Species &sp : species) {
 		out << "<DataArray Name=\"n." << sp.name
 			<< "\" NumberOfComponents=\"1\" format=\"ascii\" "
 			<< "type=\"Float64\">\n";
@@ -349,9 +389,7 @@ void Domain::save_fields(std::vector<Species> &species) const
 	out << "</PointData>\n";
 
 	out << "<CellData>\n";
-	for (Species &sp : species) {
-		sp.calc_macroparticle_density();
-
+	for (const Species &sp : species) {
 		out << "<DataArray Name=\"mp_count." << sp.name
 			<< "\" NumberOfComponents=\"1\" format=\"ascii\" "
 			<< "type=\"Float64\">\n";
@@ -364,9 +402,60 @@ void Domain::save_fields(std::vector<Species> &species) const
 	out << "</VTKFile>\n";
 
 	out.close();
+}
 
-	if (!steady_state()) {
-		for(Species &sp : species)
-			sp.clear_samples();
+void Domain::save_particles(std::vector<Species> &species, int n_particles) const
+{
+	for(const Species &sp : species) {
+		stringstream ss;
+		ss << prefix << "_" << sp.name
+			<< "_" << setfill('0') << setw(6) << get_iter() << ".vtp";
+
+		ofstream out(ss.str());
+		if (!out.is_open()) {
+			cerr << "Could not open '" << ss.str() << "'" << endl;
+			exit(EXIT_FAILURE);
+		}
+
+		double dp = n_particles/(double)sp.get_sim_count();
+		double np = 0;
+		vector<const Particle *> p_out;
+		for(const Particle &p : sp.particles) {
+			np += dp;
+			if (np > 1) {
+				p_out.emplace_back(&p);
+				np -= 1;
+			}
+		}
+
+		out << "<?xml version=\"1.0\"?>\n";
+		out << "<VTKFile type=\"PolyData\" version=\"0.1\" "
+			<< "byte_order=\"LittleEndian\">\n";
+		out << "<PolyData>\n";
+		out << "<Piece NumberOfPoints=\"" << p_out.size()
+			<< "\" NumberOfVerts=\"0\" NumberOfLines=\"0\" ";
+		out << "NumberOfStrips=\"0\" NumberOfCells=\"0\">\n";
+
+		out << "<Points>\n";
+		out << "<DataArray type=\"Float64\" NumberOfComponents=\"3\" "
+			<< "format=\"ascii\">\n";
+		for (const Particle *p : p_out)
+			out << p->x.transpose() << "\n";
+		out << "</DataArray>\n";
+		out << "</Points>\n";
+
+		out << "<PointData>\n";
+		out << "<DataArray Name=\"v." << sp.name
+			<< "\" type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">\n";
+		for (const Particle *p : p_out)
+			out << p->v.transpose() << "\n";
+		out << "</DataArray>\n";
+		out << "</PointData>\n";
+
+		out << "</Piece>\n";
+		out << "</PolyData>\n";
+		out << "</VTKFile>\n";
+
+		out.close();
 	}
 }

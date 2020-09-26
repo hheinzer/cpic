@@ -18,9 +18,13 @@ Solver::Solver(Domain &domain, int iter_max, double tol) :
 	b0 = VectorXd::Zero(n_nodes);
 	is_regular = VectorXd::Zero(n_nodes);
 
-	for (int i = 0; i < domain.ni; ++i) {
-		for (int j = 0; j < domain.nj; ++j) {
-			for (int k = 0; k < domain.nk; ++k) {
+	const int &ni = domain.ni;
+	const int &nj = domain.nj;
+	const int &nk = domain.nk;
+
+	for (int i = 0; i < ni; ++i) {
+		for (int j = 0; j < nj; ++j) {
+			for (int k = 0; k < nk; ++k) {
 				int u = at(i,j,k);
 
 				if (i == 0) {
@@ -66,11 +70,11 @@ Solver::Solver(Domain &domain, int iter_max, double tol) :
 	}
 }
 
-void Solver::set_reference_values(double phi0, double n0, double Te0)
+void Solver::set_reference_values(double phi0, double Te0, double n0)
 {
 	this->phi0 = phi0;
-	this->n0 = n0;
 	this->Te0 = Te0;
+	this->n0 = n0;
 }
 
 void Solver::calc_potential()
@@ -92,23 +96,24 @@ void Solver::calc_potential_non_linear()
 {
 	VectorXd &rho = domain.rho;
 	VectorXd &phi = domain.phi;
+	VectorXd &n_e = domain.n_e;
 
 	VectorXd b = b0.array() - (rho/EPS0).array()*is_regular.array();
 
 	VectorXd del_phi = VectorXd::Zero(n_nodes);
 
 	for (int iter = 0; iter < newton_iter_max; ++iter) {
-		VectorXd F = A*phi - b;
+		VectorXd R = A*phi - b;
 
-		F.array() -= (QE*n0*exp((phi.array() - phi0)/Te0)/EPS0)
+		R.array() -= (QE/EPS0*n0*exp((phi.array() - phi0)/Te0))
 			*is_regular.array();
 
-		VectorXd P = (n0*QE/(EPS0*Te0)*exp((phi.array() - phi0)/Te0))
+		SpMat J = A;
+
+		J.diagonal().array() -= (QE*n0/(EPS0*Te0)*exp((phi.array() - phi0)/Te0))
 			*is_regular.array();
 
-		SpMat J = A; J.diagonal() -= P;
-
-		del_phi = solver.factorize(J).solveWithGuess(F, del_phi);
+		del_phi = solver.factorize(J).solveWithGuess(R, del_phi);
 
 		if (solver.info() != Success) {
 			cerr << "Solver failed to find a solution!" << endl;
@@ -117,7 +122,10 @@ void Solver::calc_potential_non_linear()
 
 		phi -= del_phi;
 
-		if (del_phi.norm() < newton_tol) return;
+		if (del_phi.norm() < newton_tol) {
+			n_e = n0 * exp((phi.array() - phi0)/Te0);
+			return;
+		}
 	}
 
 	cerr << "Newton Sover failed to converge!" << endl;
@@ -126,6 +134,10 @@ void Solver::calc_potential_non_linear()
 
 void Solver::calc_electric_field()
 {
+	const int &ni = domain.ni;
+	const int &nj = domain.nj;
+	const int &nk = domain.nk;
+
 	VectorXd &phi = domain.phi;
 	MatrixXd &E  = domain.E;
 
@@ -134,14 +146,14 @@ void Solver::calc_electric_field()
 	double dy2 = 2*del_x(Y);
 	double dz2 = 2*del_x(Z);
 
-	for (int i = 0; i < domain.ni; ++i) {
-		for (int j = 0; j < domain.nj; ++j) {
-			for (int k = 0; k < domain.nk; ++k) {
+	for (int i = 0; i < ni; ++i) {
+		for (int j = 0; j < nj; ++j) {
+			for (int k = 0; k < nk; ++k) {
 				int u = at(i, j, k);
 
 				if (i == 0) {
 					E(u,X) = -(-3*phi(at(i,j,k)) + 4*phi(at(i + 1,j,k)) - phi(at(i + 2,j,k)))/dx2;
-				} else if (i == domain.ni - 1) {
+				} else if (i == ni - 1) {
 					E(u,X) = -(phi(at(i - 2,j,k)) - 4*phi(at(i - 1,j,k)) + 3*phi(at(i,j,k)))/dx2;
 				} else {
 					E(u,X) = -(phi(at(i + 1,j,k)) - phi(at(i - 1,j,k)))/dx2;
@@ -149,7 +161,7 @@ void Solver::calc_electric_field()
 
 				if (j == 0) {
 					E(u,Y) = -(-3*phi(at(i,j,k)) + 4*phi(at(i,j + 1,k)) - phi(at(i,j + 2,k)))/dy2;
-				} else if (j == domain.nj - 1) {
+				} else if (j == nj - 1) {
 					E(u,Y) = -(phi(at(i,j - 2,k)) - 4*phi(at(i,j - 1,k)) + 3*phi(at(i,j,k)))/dy2;
 				} else {
 					E(u,Y) = -(phi(at(i,j + 1,k)) - phi(at(i,j - 1,k)))/dy2;
@@ -157,7 +169,7 @@ void Solver::calc_electric_field()
 
 				if (k == 0) {
 					E(u,Z) = -(-3*phi(at(i,j,k)) + 4*phi(at(i,j,k + 1)) - phi(at(i,j,k + 2)))/dz2;
-				} else if (k == domain.nk - 1) {
+				} else if (k == nk - 1) {
 					E(u,Z) = -(phi(at(i,j,k - 2)) - 4*phi(at(i,j,k - 1)) + 3*phi(at(i,j,k)))/dz2;
 				} else {
 					E(u,Z) = -(phi(at(i,j,k + 1)) - phi(at(i,j,k - 1)))/dz2;

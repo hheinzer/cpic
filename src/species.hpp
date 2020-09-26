@@ -11,11 +11,12 @@
 struct Particle {
 	using Vector3d = Eigen::Vector3d;
 
-	Particle(const Vector3d &x, const Vector3d &v, double w_mp) :
-		x{x}, v{v}, w_mp{w_mp} {}
+	Particle(const Vector3d &x, const Vector3d &v, double dt, double w_mp) :
+		x{x}, v{v}, dt{dt}, w_mp{w_mp} {}
 
 	Vector3d x;		/* [m] particle position */
 	Vector3d v;		/* [m/s] particle velocity */
+	double dt;		/* [s] particle time step */
 	double w_mp;	/* [-] macro particle weight */
 };
 
@@ -35,11 +36,19 @@ class Species {
 
 		double get_kinetic_energy() const;
 
+		double get_maxwellian_velocity_magnitude(double T) const;
+
+		Vector3d get_maxwellian_velocity(double T) const;
+
 		void add_particle(const Vector3d &x, const Vector3d &v);
 
-		void add_particle(const Vector3d &x, const Vector3d &v, double w_mp);
+		void add_particle(const Vector3d &x, const Vector3d &v, double dt, double w_mp);
 
-		void add_particle_box(const Vector3d &x1, const Vector3d &x2, double n);
+		void add_cold_box(const Vector3d &x1, const Vector3d &x2, double n,
+				const Vector3d &v_drift);
+
+		void add_warm_box(const Vector3d &x1, const Vector3d &x2, double n,
+				const Vector3d &v_drift, double T);
 
 		void push_particles_leapfrog();
 
@@ -47,21 +56,15 @@ class Species {
 
 		void calc_number_density();
 
+		void clear_moments();
+
 		void sample_moments();
 
 		void calc_gas_properties();
 
-		void calc_macroparticle_density();
-
-		void clear_samples();
+		void calc_macroparticle_count();
 
 		void update_mean();
-
-		double sample_thermal_vel(double T) const;
-
-		Vector3d sample_isothermal_vel(double T) const;
-
-		Vector3d sample_reflected_vel(const Vector3d &d, double v_mag1, double T) const;
 
 		const std::string name;
 		const double m_s;	/* [kg] species mass */
@@ -77,8 +80,6 @@ class Species {
 
 	private:
 		int n_samples = 0;
-
-		const int M = 3;
 
 		VectorXd n_sum, nuu_sum, nvv_sum, nww_sum;
 		MatrixXd nv_sum;

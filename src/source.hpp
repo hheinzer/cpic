@@ -17,18 +17,30 @@ class ColdBeam : public Source {
 		using Vector3d = Eigen::Vector3d;
 
 		ColdBeam(Species &species, Domain &domain, const Vector3d &x1,
-				const Vector3d &x2, const Vector3d &v0, double n);
+				const Vector3d &x2, const Vector3d &v_drift, double n);
 
-		void sample() override;
+		virtual void sample() override;
 
-	private:
 		Species &species;
 		Domain &domain;
 
-		Vector3d x1, x2, dx, v0;
+		Vector3d x1, x2, dx, v_drift;
 		double A, n;
 
 		int random_dirs[2], fix_dir;
+};
+
+class WarmBeam : public ColdBeam {
+	public:
+		using Vector3d = Eigen::Vector3d;
+
+		WarmBeam(Species &species, Domain &domain, const Vector3d &x1,
+				const Vector3d &x2, const Vector3d &v_drift, double n, double T) :
+			ColdBeam(species, domain, x1, x2, v_drift, n), T{T} {}
+
+		void sample() override;
+
+		double T;
 };
 
 #endif

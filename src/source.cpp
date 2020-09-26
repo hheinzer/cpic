@@ -4,8 +4,8 @@ using namespace std;
 using namespace Eigen;
 
 ColdBeam::ColdBeam(Species &species, Domain &domain, const Vector3d &x1,
-		const Vector3d &x2, const Vector3d &v0, double n) :
-	species{species}, domain{domain}, x1{x1}, x2{x2}, v0{v0}, n{n}
+		const Vector3d &x2, const Vector3d &v_drift, double n) :
+	species{species}, domain{domain}, x1{x1}, x2{x2}, v_drift{v_drift}, n{n}
 {
 	dx = x2 - x1;
 	if (dx(X) == 0) {
@@ -31,7 +31,7 @@ ColdBeam::ColdBeam(Species &species, Domain &domain, const Vector3d &x1,
 
 void ColdBeam::sample()
 {
-	double n_real = n*v0.norm()*A*domain.get_time_step();
+	double n_real = n*v_drift.norm()*A*domain.get_time_step();
 	int n_sim = (int)(n_real/species.w_mp0 + rng());
 
 	MatrixXd new_x(n_sim, 3), new_v(n_sim, 3);
@@ -41,9 +41,29 @@ void ColdBeam::sample()
 	new_x.col(fix_dir).setConstant(x1(fix_dir));
 
 	for (int dir : {X, Y, Z})
-		new_v.col(dir).setConstant(v0(dir));
+		new_v.col(dir).setConstant(v_drift(dir));
 
 	for (int p = 0; p < n_sim; ++p) {
 		species.add_particle(new_x.row(p), new_v.row(p));
+	}
+}
+
+void WarmBeam::sample()
+{
+	double n_real = n*v_drift.norm()*A*domain.get_time_step();
+	int n_sim = (int)(n_real/species.w_mp0 + rng());
+
+	MatrixXd new_x(n_sim, 3), new_v(n_sim, 3);
+
+	for (int &dir : random_dirs)
+		new_x.col(dir) = x1(dir) + rng(n_sim).array()*dx(dir);
+	new_x.col(fix_dir).setConstant(x1(fix_dir));
+
+	for (int dir : {X, Y, Z})
+		new_v.col(dir).setConstant(v_drift(dir));
+
+	for (int p = 0; p < n_sim; ++p) {
+		RowVector3d v_M = species.get_maxwellian_velocity(T);
+		species.add_particle(new_x.row(p), new_v.row(p) + v_M);
 	}
 }

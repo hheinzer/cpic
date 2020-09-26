@@ -15,9 +15,9 @@ enum ChartesianDirection {X, Y, Z};
 
 enum BoundarySide {Xmin, Xmax, Ymin, Ymax, Zmin, Zmax};
 
-enum FieldBCtype {Dirichlet, Neumann};
+enum class FieldBCtype {Dirichlet, Neumann};
 
-enum ParticleBCtype {Reflective, Open};
+enum class ParticleBCtype {Specular, Open, Diffuse, Symmetric};
 
 class Particle;
 class Species;
@@ -26,18 +26,33 @@ class BC {
 	public:
 		BC() {}
 
-		BC(FieldBCtype fbct, ParticleBCtype pbct) :
-			field_bc_type{fbct}, particle_bc_type{pbct} {}
+		BC(ParticleBCtype pbct, FieldBCtype fbct) :
+			particle_bc_type{pbct}, field_bc_type{fbct} {}
 
-		BC(FieldBCtype fbct, ParticleBCtype pbct, double value) :
-			field_bc_type{fbct}, particle_bc_type{pbct}, value{value} {}
+		BC(ParticleBCtype pbct, FieldBCtype fbct, double value) :
+			particle_bc_type{pbct}, field_bc_type{fbct}, value{value} {}
+
+		BC(ParticleBCtype pbct, double T, FieldBCtype fbct) :
+			particle_bc_type{pbct}, field_bc_type{fbct}, T{T} {}
+
+		BC(ParticleBCtype pbct, double T, double a_th, FieldBCtype fbct) :
+			particle_bc_type{pbct}, field_bc_type{fbct}, T{T}, a_th{a_th} {}
+
+		BC(ParticleBCtype pbct, double T, FieldBCtype fbct, double value) :
+			particle_bc_type{pbct}, field_bc_type{fbct}, T{T}, value{value} {}
+
+		BC(ParticleBCtype pbct, double T, double a_th, FieldBCtype fbct, double value) :
+			particle_bc_type{pbct}, field_bc_type{fbct}, T{T}, a_th{a_th}, value{value} {}
 
 		double get_value() const {return value;}
 
 		void set_delta(double delta) {this->value *= delta;}
 
-		const FieldBCtype field_bc_type = Dirichlet;
-		const ParticleBCtype particle_bc_type = Reflective;
+		const ParticleBCtype particle_bc_type = ParticleBCtype::Specular;
+		const FieldBCtype field_bc_type = FieldBCtype::Dirichlet;
+
+		const double T = 1000;
+		const double a_th = 0.5;	/* thermal accomodation coefficient */
 
 	private:
 		double value = 0;
@@ -61,7 +76,7 @@ class Domain {
 
 		void set_iter_max(int iter_max) {this->iter_max = iter_max;}
 
-		void set_boundary_condition(BoundarySide side, BC bc);
+		void set_bc_at(BoundarySide side, BC bc);
 
 		Vector3d get_x_min() const {return x_min;}
 
@@ -91,16 +106,17 @@ class Domain {
 
 		void scatter(VectorXd &f, const Vector3d &l, double value);
 
-		void scatter(MatrixXd &f, const Vector3d &l, const VectorXd &value);
+		void scatter(MatrixXd &f, const Vector3d &l, const Vector3d &value);
 
 		Vector3d gather(const MatrixXd &f, const Vector3d &l) const;
 
 		void calc_charge_density(std::vector<Species> &species);
 
-		void apply_boundary_conditions(Particle &p);
+		void apply_boundary_conditions(const Species &sp, const Vector3d &x_old,
+				Particle &p) const;
 
 		void eval_field_BC(BoundarySide side, VectorXd &b0, std::vector<T> &coeffs,
-				int u, int v);
+				int u, int v) const;
 
 		bool steady_state(std::vector<Species> &species);
 
@@ -112,6 +128,8 @@ class Domain {
 
 		void save_fields(std::vector<Species> &species) const;
 
+		void save_particles(std::vector<Species> &species, int n_particles) const;
+
 		const std::string prefix;
 		const int ni, nj, nk;
 		const Vector3i nn;
@@ -121,12 +139,15 @@ class Domain {
 		VectorXd rho;		/* [C] charge density */
 		VectorXd phi;		/* [V] electric potential */
 		MatrixXd E;			/* [V/m] electric field */
+		VectorXd n_e;		/* [1/m^3] fluid electron density */
 
 	private:
 		void calc_node_volume();
 
-		void eval_particle_BC(ParticleBCtype type, const double &X, double &x,
-				double &v, double &w_mp);
+		void eval_particle_BC(const Species &sp, int side, const Vector3d &X,
+				const Vector3d &x_old, Particle &p, int dim, const Vector3d &n) const;
+
+		Vector3d get_diffuse_vector(const Vector3d &n) const;
 
 		Vector3d x_min, x_max, del_x;
 

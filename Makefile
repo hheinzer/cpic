@@ -1,7 +1,7 @@
 # CPIC - Particle in Cell Method, written in C++
 # See LICENSE file for copyright and license details.
 TARGET = libcpic
-TEST = box
+TEST = box_dsmc
 
 # config {on, off}
 DEBUGGING = off

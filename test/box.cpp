@@ -8,6 +8,8 @@
 using namespace std;
 using namespace Const;
 using namespace Eigen;
+using PBC = ParticleBCtype;
+using FBC = FieldBCtype;
 
 int main()
 {
@@ -21,19 +23,21 @@ int main()
 	domain.set_time_step(2e-10);
 	domain.set_iter_max(10000);
 
-	domain.set_boundary_condition(Xmin, BC(Dirichlet, Open));
-	domain.set_boundary_condition(Xmax, BC(Dirichlet, Open));
-	domain.set_boundary_condition(Ymin, BC(Dirichlet, Open));
-	domain.set_boundary_condition(Ymax, BC(Dirichlet, Open));
-	domain.set_boundary_condition(Zmin, BC(Dirichlet, Open));
-	domain.set_boundary_condition(Zmax, BC(Dirichlet, Open));
+	domain.set_bc_at(Xmin, BC(PBC::Symmetric, FBC::Dirichlet));
+	domain.set_bc_at(Xmax, BC(PBC::Symmetric, FBC::Dirichlet));
+	domain.set_bc_at(Ymin, BC(PBC::Symmetric, FBC::Dirichlet));
+	domain.set_bc_at(Ymax, BC(PBC::Symmetric, FBC::Dirichlet));
+	domain.set_bc_at(Zmin, BC(PBC::Symmetric, FBC::Dirichlet));
+	domain.set_bc_at(Zmax, BC(PBC::Symmetric, FBC::Dirichlet));
 
 	vector<Species> species;
-	species.push_back(Species("O+", 16*AMU,  QE, 8000, domain));
-	species.push_back(Species("e-",     ME, -QE, 1000, domain));
+	species.push_back(Species("O+", 16*AMU,  QE, 10000, domain));
+	species.push_back(Species("e-",     ME, -QE, 10000, domain));
 
-	species[0].add_particle_box(0.5*x_min, 0.5*x_max, 1e11);
-	species[1].add_particle_box(0.5*x_min,     x_mid, 1e11);
+	const double n = 1e11;
+
+	species[0].add_cold_box(x_min, x_max, n, {0, 0, 0});
+	species[1].add_cold_box(x_min, x_mid, n, {0, 0, 0});
 
 	for(Species &sp : species)
 		sp.calc_number_density();
@@ -46,7 +50,6 @@ int main()
 	while (domain.advance_time()) {
 		for(Species &sp : species) {
 			sp.push_particles_leapfrog();
-			sp.remove_dead_particles();
 			sp.calc_number_density();
 			sp.sample_moments();
 		}
@@ -56,10 +59,16 @@ int main()
 		solver.calc_potential();
 		solver.calc_electric_field();
 
-		if (domain.get_iter()%100 == 0 || domain.is_last_iter()) {
+		if (domain.get_iter()%50 == 0 || domain.is_last_iter()) {
+			for(Species &sp : species) {
+				sp.calc_gas_properties();
+				sp.calc_macroparticle_count();
+				sp.clear_moments();
+			}
 			domain.print_info(species);
 			domain.write_statistics(species);
 			domain.save_fields(species);
+			domain.save_particles(species, 1000);
 		}
 	}
 }
