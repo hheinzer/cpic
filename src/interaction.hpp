@@ -19,25 +19,25 @@ class DSMC : public Interaction {
 		using Vector3d = Eigen::Vector3d;
 		using RefPropMap = std::map<std::string, double>;
 
-		DSMC(Domain &domain, Species &sp1, Species &sp2);
+		DSMC(Domain &domain, Species &species);
 
 		void apply(double dt) override;
 
 	private:
 		Domain &domain;
-		Species &sp1, &sp2;
+		Species &species;
 
-		const RefPropMap d_ref = {	/* [m] reference diameter */
+		const RefPropMap d_ref_map = {	/* [m] reference diameter */
 			{"O", 4.07e-10}
 		};
-		const RefPropMap T_ref = {	/* [K] reference temperature */
+		const RefPropMap T_ref_map = {	/* [K] reference temperature */
 			{"O", 273.15}
 		};
-		const RefPropMap omega = {	/* [-] viscosity index */
+		const RefPropMap omega_map = {	/* [-] viscosity index */
 			{"O", 0.77}
 		};
 
-		double d_ref1, d_ref2, T_ref1, T_ref2, omega1, omega2;
+		double d_ref, T_ref, omega;
 
 		int n_cells;
 
@@ -46,8 +46,8 @@ class DSMC : public Interaction {
 
 		double sigma_vr_max = 1e-14;
 
-		double mr, m1, m2;	/* [kg] reduced mass, species mass */
-		double df1, df2;	/* [m^2] VHS diameter factor squared */
+		double mr, m;	/* [kg] reduced mass, species mass */
+		double df;		/* [m^2] VHS diameter factor squared */
 
 		double sigma(double v_r) const;
 

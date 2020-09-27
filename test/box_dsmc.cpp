@@ -35,11 +35,11 @@ int main()
 
 	const double n = 1e11;
 
-	species[0].add_warm_box(x_min, x_max, n/2, { 1000, 0, 0}, 100);
-	species[0].add_warm_box(x_min, x_max, n/2, {-1000, 0, 0}, 100);
+	species[0].add_warm_box(x_min, x_max, n/2, { 100, 0, 0}, 10);
+	species[0].add_warm_box(x_min, x_max, n/2, {-100, 0, 0}, 10);
 
 	vector<unique_ptr<Interaction>> interactions;
-	interactions.push_back(make_unique<DSMC>(domain, species[0], species[0]));
+	interactions.push_back(make_unique<DSMC>(domain, species[0]));
 
 	for(Species &sp : species)
 		sp.calc_number_density();
@@ -71,10 +71,12 @@ int main()
 				sp.calc_macroparticle_count();
 				sp.clear_moments();
 			}
+
 			domain.print_info(species);
 			domain.write_statistics(species);
 			domain.save_fields(species);
 			domain.save_particles(species, 1000);
+			domain.save_velocity_histogram(species);
 		}
 	}
 }

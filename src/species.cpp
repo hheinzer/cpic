@@ -32,7 +32,7 @@ double Species::get_real_count() const
 
 Vector3d Species::get_momentum() const
 {
-	Vector3d I;
+	Vector3d I = Vector3d::Zero();
 	for(const Particle &p : particles)
 		I += p.w_mp*p.v;
 	return m_s*I;

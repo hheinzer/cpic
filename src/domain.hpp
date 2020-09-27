@@ -11,7 +11,7 @@
 #include <iostream>
 #include <Eigen/Eigen>
 
-enum ChartesianDirection {X, Y, Z};
+enum ChartesianDirection {X, Y, Z, W};
 
 enum BoundarySide {Xmin, Xmax, Ymin, Ymax, Zmin, Zmax};
 
@@ -129,6 +129,8 @@ class Domain {
 		void save_fields(std::vector<Species> &species) const;
 
 		void save_particles(std::vector<Species> &species, int n_particles) const;
+
+		void save_velocity_histogram(std::vector<Species> &species) const;
 
 		const std::string prefix;
 		const int ni, nj, nk;

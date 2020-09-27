@@ -408,7 +408,7 @@ void Domain::save_particles(std::vector<Species> &species, int n_particles) cons
 {
 	for(const Species &sp : species) {
 		stringstream ss;
-		ss << prefix << "_" << sp.name
+		ss << prefix << "_" << sp.name << "_particles"
 			<< "_" << setfill('0') << setw(6) << get_iter() << ".vtp";
 
 		ofstream out(ss.str());
@@ -455,6 +455,54 @@ void Domain::save_particles(std::vector<Species> &species, int n_particles) cons
 		out << "</Piece>\n";
 		out << "</PolyData>\n";
 		out << "</VTKFile>\n";
+
+		out.close();
+	}
+}
+
+void Domain::save_velocity_histogram(std::vector<Species> &species) const
+{
+	for(const Species &sp :species) {
+		stringstream ss;
+		ss << prefix << "_v." << sp.name << "_histogram"
+			<< "_" << setfill('0') << setw(6) << get_iter() << ".csv";
+
+		ofstream out(ss.str());
+		if (!out.is_open()) {
+			cerr << "Could not open '" << ss.str() << "'" << endl;
+			exit(EXIT_FAILURE);
+		}
+
+		const int n_bins = 100;
+
+		Vector3d v_min = sp.particles[0].v;
+		Vector3d v_max = sp.particles[0].v;
+		double v_mag_max = sp.particles[0].v.norm();
+		for(const Particle &p : sp.particles) {
+			v_min = v_min.cwiseMin(p.v);
+			v_max = v_max.cwiseMax(p.v);
+			v_mag_max = max(v_mag_max, p.v.norm());
+		}
+
+		Vector4d dv;
+		dv << (v_max - v_min)/(n_bins - 1), v_mag_max/(n_bins - 1);
+
+		MatrixXd bins = MatrixXd::Zero(n_bins, 4);
+		for(const Particle &p : sp.particles) {
+			for(int dim : {X, Y, Z}) {
+				bins(round((p.v(dim) - v_min(dim))/dv(dim)), dim) += 1;
+			}
+			bins(round(p.v.norm()/dv(W)), W) += 1;
+		}
+
+		bins /= sp.particles.size();
+
+		out << "v_x,f(v_x),v_y,f(v_y),v_z,f(v_z),v_mag,f(v_mag)\n";
+		for (int b = 0; b < n_bins; ++b) {
+			for(int dim : {X, Y, Z})
+				out << v_min(dim) + b*dv(dim) << "," << bins(b, dim) << ",";
+			out << b*dv(W) << "," << bins(b, W) << "\n";
+		}
 
 		out.close();
 	}
