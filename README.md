@@ -4,7 +4,7 @@ Particle in Cell Method, written in C++
 
 # Installation
 
-You will need a C++ compiler, for example [gcc](https://gcc.gnu.org/), as well as the [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) library installed on your system. Make sure that the directory `/usr/include/Eigen` exists on your system, if not you can create a symlink to where Eigen was installed, usually it is `/usr/include/eigen3` 
+You will need a C++ compiler, for example [gcc](https://gcc.gnu.org/), as well as the [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) library installed on your system. Make sure that the directory `/usr/include/Eigen` exists on your system, if not you can create a symlink to where Eigen was installed, usually it is `/usr/include/eigen3`
 ```
 ln -s /usr/include/eigen3 /usr/include/Eigen
 ```

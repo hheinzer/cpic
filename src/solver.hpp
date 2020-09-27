@@ -32,7 +32,7 @@ class Solver {
 		Eigen::BiCGSTAB<SpMat> solver;
 
 		int iter_max, newton_iter_max = 20;
-		double tol, newton_tol = 1e-3;
+		double tol, newton_tol = 1e-4;
 
 		double phi0, n0, Te0;
 

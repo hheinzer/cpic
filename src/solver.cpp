@@ -123,7 +123,7 @@ void Solver::calc_potential_non_linear()
 		phi -= del_phi;
 
 		if (del_phi.norm() < newton_tol) {
-			n_e = n0 * exp((phi.array() - phi0)/Te0);
+			n_e = n0*exp((phi.array() - phi0)/Te0);
 			return;
 		}
 	}
