@@ -3,3 +3,4 @@ obj/**
 lib/**
 test/box/**
 test/box_dsmc/**
+test/box_fluid/**

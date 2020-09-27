@@ -45,14 +45,14 @@ void DSMC::apply(double dt)
 
 		for (int g = 0; g < N_g; ++g) {
 			Particle *p1, *p2;
-			p1 = pic[c][(int)(N_p*rng())];
 
+			p1 = pic[c][(int)(N_p*rng())];
 			do {
 				p2 = pic[c][(int)(N_p*rng())];
 			} while(p2 == p1);
 
-			double vr = (p1->v - p2->v).norm();
-			double sigma_vr = sigma(vr)*vr;
+			double vr_mag = (p1->v - p2->v).norm();
+			double sigma_vr = sigma(vr_mag)*vr_mag;
 
 			if (sigma_vr > sigma_vr_max_tmp)
 				sigma_vr_max_tmp = sigma_vr;
@@ -70,10 +70,10 @@ void DSMC::apply(double dt)
 		sigma_vr_max = sigma_vr_max_tmp;
 }
 
-double DSMC::sigma(double v_r) const
+double DSMC::sigma(double vr_mag) const
 {
 	/* Bird's Variable Hard Sphere */
-	double d = df*pow(1/(v_r*v_r), omega/2 - 0.25);
+	double d = df*pow(1/(vr_mag*vr_mag), omega/2 - 0.25);
 	return PI*d*d;
 }
 

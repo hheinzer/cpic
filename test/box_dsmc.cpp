@@ -31,24 +31,15 @@ int main()
 	domain.set_bc_at(Zmax, BC(PBC::Symmetric, FBC::Dirichlet));
 
 	vector<Species> species;
-	species.push_back(Species("O+", 16*AMU, QE, 10000, domain));
+	species.push_back(Species("O", 16*AMU, 0, 1e13, domain));
 
-	const double n = 1e11;
+	const double n = 1e20;
 
-	species[0].add_warm_box(x_min, x_max, n/2, { 100, 0, 0}, 10);
-	species[0].add_warm_box(x_min, x_max, n/2, {-100, 0, 0}, 10);
+	species[0].add_warm_box(x_min, x_max, n/2, { 100, 0, 0}, 1);
+	species[0].add_warm_box(x_min, x_max, n/2, {-100, 0, 0}, 1);
 
 	vector<unique_ptr<Interaction>> interactions;
 	interactions.push_back(make_unique<DSMC>(domain, species[0]));
-
-	for(Species &sp : species)
-		sp.calc_number_density();
-	domain.calc_charge_density(species);
-
-	Solver solver(domain, 10000, 1e-4);
-	solver.set_reference_values(0, 1.5, n);
-	solver.calc_potential_non_linear();
-	solver.calc_electric_field();
 
 	while (domain.advance_time()) {
 		for(auto &interaction : interactions)
@@ -57,16 +48,11 @@ int main()
 		for(Species &sp : species) {
 			sp.push_particles_leapfrog();
 			sp.calc_number_density();
-			sp.sample_moments();
 		}
-
-		domain.calc_charge_density(species);
-
-		solver.calc_potential_non_linear();
-		solver.calc_electric_field();
 
 		if (domain.get_iter()%50 == 0 || domain.is_last_iter()) {
 			for(Species &sp : species) {
+				sp.sample_moments();
 				sp.calc_gas_properties();
 				sp.calc_macroparticle_count();
 				sp.clear_moments();

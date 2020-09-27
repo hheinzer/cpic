@@ -51,7 +51,6 @@ int main()
 		for(Species &sp : species) {
 			sp.push_particles_leapfrog();
 			sp.calc_number_density();
-			sp.sample_moments();
 		}
 
 		domain.calc_charge_density(species);
@@ -61,10 +60,12 @@ int main()
 
 		if (domain.get_iter()%50 == 0 || domain.is_last_iter()) {
 			for(Species &sp : species) {
+				sp.sample_moments();
 				sp.calc_gas_properties();
 				sp.calc_macroparticle_count();
 				sp.clear_moments();
 			}
+
 			domain.print_info(species);
 			domain.write_statistics(species);
 			domain.save_fields(species);
