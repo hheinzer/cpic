@@ -8,7 +8,7 @@ You will need a C++ compiler, for example [gcc](https://gcc.gnu.org/), as well a
 ```
 ln -s /usr/include/eigen3 /usr/include/Eigen
 ```
-Now you are all set, just run `make` in the root directory and the code should compile. With `make run` you can run a test case from the `tests` directory. Check out the `Makefile` to see how to include `libcpic` into your own code.
+Now you are all set, just run `make` in the root directory and the code should compile. With `make run` you can run a test case from the `tests` directory. Check out the `Makefile` to see how to use `libcpic` in your own code.
 
 # Examples
 
