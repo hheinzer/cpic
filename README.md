@@ -12,10 +12,10 @@ Now you are all set, just run `make` in the root directory and the code should c
 
 # Examples
 
-## Free Electrons Moving Around a Cloud of Oxygen Ions
+## Free Electrons Moving Around a Cloud of Oxygen Ions (Collisionless)
 
 ![](img/vlasov.gif)
 
-## Two Oxygen Velocity Distributions Merging
+## Two Oxygen Velocity Distributions Merging (DSMC Collisions)
 
 ![](img/dsmc.gif)
