@@ -5,8 +5,8 @@ using namespace std;
 using namespace Eigen;
 using namespace Const;
 
-Species::Species(string name, double m_s, double rho_s, double w_mp0, Domain &domain) :
-	name{name}, m_s{m_s}, rho_s{rho_s}, w_mp0{w_mp0}, domain{domain}
+Species::Species(string name, double m, double q, double w_mp0, Domain &domain) :
+	name{name}, m{m}, q{q}, w_mp0{w_mp0}, domain{domain}
 {
 	int n_nodes = domain.n_nodes;
 	int n_cells = domain.n_cells;
@@ -35,7 +35,7 @@ Vector3d Species::get_momentum() const
 	Vector3d I = Vector3d::Zero();
 	for(const Particle &p : particles)
 		I += p.w_mp*p.v;
-	return m_s*I;
+	return m*I;
 }
 
 double Species::get_kinetic_energy() const
@@ -43,12 +43,12 @@ double Species::get_kinetic_energy() const
 	double E_kin = 0;
 	for(const Particle &p : particles)
 		E_kin += p.w_mp*p.v.squaredNorm();
-	return 0.5*m_s*E_kin;
+	return 0.5*m*E_kin;
 }
 
 double Species::get_maxwellian_velocity_magnitude(double T) const
 {
-	double v_th = sqrt(2*K*T/m_s);
+	double v_th = sqrt(2*K*T/m);
 
 	const double v_min = -6*v_th;
 	const double v_max =  6*v_th;
@@ -87,7 +87,7 @@ void Species::add_particle(const Vector3d &x, const Vector3d &v, double dt, doub
 {
 	Vector3d l = domain.x_to_l(x);
 	Vector3d E_p = domain.gather(domain.E, l);
-	Vector3d dv = rho_s/m_s*E_p*0.5*domain.get_time_step();
+	Vector3d dv = q/m*E_p*0.5*domain.get_time_step();
 	particles.emplace_back(Particle(x, v - dv, dt, w_mp));
 }
 
@@ -134,7 +134,7 @@ void Species::push_particles_leapfrog()
 		Vector3d l = domain.x_to_l(p.x);
 		Vector3d E_p = domain.gather(domain.E, l);
 
-		p.v += E_p*(p.dt*rho_s/m_s);
+		p.v += E_p*(p.dt*q/m);
 
 		int n_bounces = 0;
 
@@ -224,7 +224,7 @@ void Species::calc_gas_properties()
 		double vv = v2_mean - v_mean*v_mean;
 		double ww = w2_mean - w_mean*w_mean;
 
-		T(u) = m_s/(3*K)*(uu + vv + ww);
+		T(u) = m/(3*K)*(uu + vv + ww);
 	}
 }
 

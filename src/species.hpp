@@ -26,7 +26,7 @@ class Species {
 		using VectorXd = Eigen::VectorXd;
 		using MatrixXd = Eigen::MatrixXd;
 
-		Species(std::string name, double m_s, double rho_s, double w_mp0, Domain &domain);
+		Species(std::string name, double m, double q, double w_mp0, Domain &domain);
 
 		int get_sim_count() const {return (int)particles.size();}
 
@@ -67,8 +67,8 @@ class Species {
 		void update_mean();
 
 		const std::string name;
-		const double m_s;	/* [kg] species mass */
-		const double rho_s;	/* [C] species charge */
+		const double m;		/* [kg] species mass */
+		const double q; 	/* [C] species charge */
 		const double w_mp0;	/* [-] default macro particle weight */
 
 		std::vector<Particle> particles;

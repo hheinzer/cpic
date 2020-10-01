@@ -52,7 +52,7 @@ class BC {
 		const FieldBCtype field_bc_type = FieldBCtype::Dirichlet;
 
 		const double T = 1000;
-		const double a_th = 0.5;	/* thermal accomodation coefficient */
+		const double a_th = 1;	/* thermal accomodation coefficient */
 
 	private:
 		double value = 0;
@@ -161,8 +161,8 @@ class Domain {
 		std::chrono::time_point<std::chrono::high_resolution_clock> wtime_start;
 
 		bool is_steady_state = false;
-		double prev_m_tot = 0, prev_I_tot = 0, prev_E_tot = 0;
-		const double tol_steady_state = 0.01;
+		double prev_n_tot = 0, prev_I_tot = 0, prev_E_tot = 0;
+		const double tol_steady_state = 0.001;
 
 		std::ofstream stats;
 };

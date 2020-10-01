@@ -13,7 +13,7 @@ DSMC::DSMC(Domain &domain, Species &species) :
 
 	w_mp = species.w_mp0;
 
-	m = species.m_s;
+	m = species.m;
 	mr = m*m/(m + m);
 
 	string name = species.name;

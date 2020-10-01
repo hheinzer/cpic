@@ -146,8 +146,8 @@ void Domain::calc_charge_density(std::vector<Species> &species)
 {
 	rho.setZero();
 	for(const Species &sp : species) {
-		if (sp.rho_s == 0) continue;
-		rho += sp.rho_s*sp.n;
+		if (sp.q == 0) continue;
+		rho += sp.q*sp.n;
 	}
 }
 
@@ -187,21 +187,21 @@ bool Domain::steady_state(std::vector<Species> &species)
 {
 	if (is_steady_state) return true;
 
-	double m_tot = 0, I_tot = 0, E_tot = 0;
+	double n_tot = 0, I_tot = 0, E_tot = 0;
 	for(const Species &sp : species) {
-		m_tot += sp.get_real_count();
+		n_tot += sp.get_sim_count();
 		I_tot += sp.get_momentum().norm();
 		E_tot += sp.get_kinetic_energy();
 	}
 
-	if (	abs((m_tot - prev_m_tot)/prev_m_tot) < tol_steady_state &&
+	if (	abs((n_tot - prev_n_tot)/prev_n_tot) < tol_steady_state &&
 			abs((I_tot - prev_I_tot)/prev_I_tot) < tol_steady_state &&
 			abs((E_tot - prev_E_tot)/prev_E_tot) < tol_steady_state)  {
 		is_steady_state = true;
 		cout << "Steady state reached at iteration " << iter << endl;
 	}
 
-	prev_m_tot = m_tot;
+	prev_n_tot = n_tot;
 	prev_I_tot = I_tot;
 	prev_E_tot = E_tot;
 
@@ -483,6 +483,11 @@ void Domain::save_velocity_histogram(std::vector<Species> &species) const
 			v_max = v_max.cwiseMax(p.v);
 			v_mag_max = max(v_mag_max, p.v.norm());
 		}
+
+		const double eps = 0.01;
+		v_min.array() -= eps;
+		v_max.array() += eps;
+		v_mag_max += eps;
 
 		Vector4d dv;
 		dv << (v_max - v_min)/(n_bins - 1), v_mag_max/(n_bins - 1);
