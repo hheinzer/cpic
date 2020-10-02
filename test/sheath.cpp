@@ -17,7 +17,7 @@ int main()
 	x_min << -0.1, -0.1, -0.1;
 	x_max <<  0.1,  0.1,  0.1;
 
-	Domain domain("test/box_fluid/box", 21, 21, 21);
+	Domain domain("test/sheath/sheath", 21, 21, 21);
 	domain.set_dimensions(x_min, x_max);
 	domain.set_time_step(1e-7);
 	domain.set_iter_max(5000);

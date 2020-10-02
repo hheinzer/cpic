@@ -41,22 +41,18 @@ int main()
 
 	for(Species &sp : species)
 		sp.calc_number_density();
-	domain.calc_charge_density(species);
 
 	Solver solver(domain, 10000, 1e-4);
-	solver.calc_potential();
-	solver.calc_electric_field();
 
 	while (domain.advance_time()) {
+		domain.calc_charge_density(species);
+		solver.calc_potential();
+		solver.calc_electric_field();
+
 		for(Species &sp : species) {
 			sp.push_particles_leapfrog();
 			sp.calc_number_density();
 		}
-
-		domain.calc_charge_density(species);
-
-		solver.calc_potential();
-		solver.calc_electric_field();
 
 		if (domain.get_iter()%50 == 0 || domain.is_last_iter()) {
 			for(Species &sp : species) {
