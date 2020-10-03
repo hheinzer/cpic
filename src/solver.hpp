@@ -17,7 +17,7 @@ class Solver {
 
 		void calc_potential();
 
-		void calc_potential_non_linear();
+		void calc_potential_BR();
 
 		void calc_electric_field();
 

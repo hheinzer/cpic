@@ -92,11 +92,11 @@ void Solver::calc_potential()
 	}
 }
 
-void Solver::calc_potential_non_linear()
+void Solver::calc_potential_BR()
 {
 	VectorXd &rho = domain.rho;
 	VectorXd &phi = domain.phi;
-	VectorXd &n_e = domain.n_e;
+	VectorXd &n_e_BR = domain.n_e_BR;
 
 	VectorXd b = b0.array() - (rho/EPS0).array()*is_regular.array();
 
@@ -123,7 +123,7 @@ void Solver::calc_potential_non_linear()
 		phi -= del_phi;
 
 		if (del_phi.norm() < newton_tol) {
-			n_e = n0*exp((phi.array() - phi0)/Te0);
+			n_e_BR = n0*exp((phi.array() - phi0)/Te0);
 			return;
 		}
 	}

@@ -24,7 +24,7 @@ Domain::Domain(string prefix, int ni, int nj, int nk) :
 	rho    = VectorXd::Zero(n_nodes);
 	phi    = VectorXd::Zero(n_nodes);
 	E      = MatrixXd::Zero(n_nodes, 3);
-	n_e    = VectorXd::Zero(n_nodes);
+	n_e_BR = VectorXd::Zero(n_nodes);
 }
 
 void Domain::set_dimensions(const Vector3d &x_min, const Vector3d &x_max)
@@ -357,7 +357,7 @@ void Domain::save_fields(std::vector<Species> &species) const
 
 	out << "<DataArray Name=\"n.fluid_e-\" NumberOfComponents=\"1\" "
 		<< "format=\"ascii\" type=\"Float64\">\n";
-	out << n_e;
+	out << n_e_BR;
 	out << "</DataArray>\n";
 
 	for (const Species &sp : species) {
@@ -475,9 +475,16 @@ void Domain::save_velocity_histogram(std::vector<Species> &species) const
 
 		const int n_bins = 100;
 
-		Vector3d v_min = sp.particles[0].v;
-		Vector3d v_max = sp.particles[0].v;
-		double v_mag_max = sp.particles[0].v.norm();
+		Vector3d v_min = Vector3d::Zero();
+		Vector3d v_max = Vector3d::Zero();
+		double v_mag_max = 0;
+
+		if (sp.particles.size() > 0) {
+			v_min = sp.particles[0].v;
+			v_max = sp.particles[0].v;
+			v_mag_max = sp.particles[0].v.norm();
+		}
+
 		for(const Particle &p : sp.particles) {
 			v_min = v_min.cwiseMin(p.v);
 			v_max = v_max.cwiseMax(p.v);

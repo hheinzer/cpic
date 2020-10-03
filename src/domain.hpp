@@ -141,7 +141,7 @@ class Domain {
 		VectorXd rho;		/* [C] charge density */
 		VectorXd phi;		/* [V] electric potential */
 		MatrixXd E;			/* [V/m] electric field */
-		VectorXd n_e;		/* [1/m^3] fluid electron density */
+		VectorXd n_e_BR;	/* [1/m^3] electron density (Boltzmann relation) */
 
 	private:
 		void calc_node_volume();
