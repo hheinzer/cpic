@@ -13,7 +13,7 @@ class Solver {
 
 		Solver(Domain &domain, int iter_max, double tol);
 
-		void set_reference_values(double phi0, double n0, double Te0);
+		void set_reference_values(double phi0, double Te0, double n0);
 
 		void calc_potential();
 

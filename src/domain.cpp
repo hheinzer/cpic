@@ -2,6 +2,7 @@
 #include "random.hpp"
 #include "const.hpp"
 #include "species.hpp"
+#include "object.hpp"
 
 using namespace std;
 using namespace Eigen;
@@ -517,5 +518,57 @@ void Domain::save_velocity_histogram(std::vector<Species> &species) const
 		}
 
 		out.close();
+	}
+}
+
+void Domain::save_object_mesh(std::vector<std::unique_ptr<Object>> &objects) const
+{
+	int i_object = 1;
+	for(auto &object : objects) {
+		stringstream ss;
+		ss << prefix << "_object_" << i_object << ".vtp";
+
+		ofstream out(ss.str());
+		if (!out.is_open()) {
+			cerr << "Could not open file " << ss.str() << endl;
+			exit(EXIT_FAILURE);
+		}
+
+		out << "<?xml version=\"1.0\"?>\n";
+		out << "<VTKFile type=\"PolyData\" version=\"0.1\" "
+			<< "byte_order=\"LittleEndian\">\n";
+		out << "<PolyData>\n";
+		out << "<Piece NumberOfPoints=\"" << object->mesh.nodes.size()
+			<< "\" NumberOfVerts=\"0\" NumberOfLines=\"0\" ";
+		out << "NumberOfStrips=\"0\" "
+			<< "NumberOfPolys=\"" << object->mesh.trias.size() << "\">\n";
+
+		out << "<Points>\n";
+		out << "<DataArray type=\"Float64\" NumberOfComponents=\"3\" "
+			<< "format=\"ascii\">\n";
+		for (const Node &node : object->mesh.nodes)
+			out << node.pos.transpose() << "\n";
+		out << "</DataArray>\n";
+		out << "</Points>\n";
+
+		out << "<Polys>\n";
+		out << "<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">\n";
+		for (const Triangle &tria : object->mesh.trias)
+			out << tria.con.transpose() << "\n";
+		out << "</DataArray>\n";
+
+		out << "<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">\n";
+		for (size_t i_tria = 0; i_tria < object->mesh.trias.size(); ++i_tria)
+			out << 3*(i_tria + 1) << "\n";
+		out << "</DataArray>\n";
+		out << "</Polys>\n";
+
+		out << "</Piece>\n";
+		out << "</PolyData>\n";
+		out << "</VTKFile>\n";
+
+		out.close();
+
+		++i_object;
 	}
 }

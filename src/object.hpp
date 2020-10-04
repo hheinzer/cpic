@@ -35,7 +35,9 @@ class SurfaceMesh {
 	public:
 		using Vector3d = Eigen::Vector3d;
 
-		SurfaceMesh(std::string file_name) {load_msh(file_name);}
+		SurfaceMesh(std::string file_name, const Vector3d &x_o);
+
+		const Vector3d &x_o;
 
 		std::vector<Node> nodes;
 		std::vector<Triangle> trias;
@@ -67,13 +69,13 @@ class Object {
 
 		Intersection get_diffuse_intersection(const Vector3d &x1, const Vector3d &x2) const;
 
-		const Vector3d x_o;	/* [m] origin offset vector */
 		const double phi;	/* [V] surface potential */
 		const double T;		/* [K] surface temperature */
 
+		const SurfaceMesh mesh;
+
 	private:
 		Domain &domain;
-		SurfaceMesh mesh;
 };
 
 #endif

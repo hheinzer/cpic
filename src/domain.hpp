@@ -21,6 +21,7 @@ enum class ParticleBCtype {Specular, Open, Diffuse, Symmetric};
 
 class Particle;
 class Species;
+class Object;
 
 class BC {
 	public:
@@ -131,6 +132,8 @@ class Domain {
 		void save_particles(std::vector<Species> &species, int n_particles) const;
 
 		void save_velocity_histogram(std::vector<Species> &species) const;
+
+		void save_object_mesh(std::vector<std::unique_ptr<Object>> &objects) const;
 
 		const std::string prefix;
 		const int ni, nj, nk;

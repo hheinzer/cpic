@@ -3,6 +3,12 @@
 using namespace std;
 using namespace Eigen;
 
+SurfaceMesh::SurfaceMesh(std::string file_name, const Vector3d &x_o) :
+	x_o{x_o}
+{
+	load_msh(file_name);
+}
+
 void SurfaceMesh::load_msh(string file_name)
 {
 	ifstream msh(file_name);
@@ -23,7 +29,7 @@ void SurfaceMesh::load_msh(string file_name)
 			cerr << "Wrong MeshFormat! Only 4.0 and up supported!" << endl;
 			exit(EXIT_FAILURE);
 		} else {
-			cout << "Reading mesh file '" << file_name << "':" << endl;
+			cout << "Reading surface mesh file '" << file_name << "':" << endl;
 		}
 		break;
 	}
@@ -69,7 +75,7 @@ void SurfaceMesh::load_msh_nodes(ifstream &msh)
 			double x, y, z;
 			ss >> x >> y >> z;
 			lut_nodes[id[j]] = nodes.size();
-			nodes.emplace_back(Node(x, y, z));
+			nodes.emplace_back(Node(x + x_o(X), y + x_o(Y), z + x_o(Z)));
 		}
 	}
 
@@ -129,7 +135,7 @@ void SurfaceMesh::load_msh_elements(ifstream &msh)
 
 Object::Object(Domain &domain, std::string mesh_file_name, const Vector3d &x_o,
 		double phi, double T) :
-	x_o{x_o}, phi{phi}, T{T}, domain{domain}, mesh{mesh_file_name}
+	phi{phi}, T{T}, mesh{mesh_file_name, x_o}, domain{domain}
 {
 
 }
@@ -144,12 +150,14 @@ bool Object::is_inside(int u) const
 
 }
 
-Object::Intersection Object::get_intersection(const Vector3d &x1, const Vector3d &x2) const
+Object::Intersection Object::get_intersection(const Vector3d &x1,
+		const Vector3d &x2) const
 {
 
 }
 
-Object::Intersection Object::get_diffuse_intersection(const Vector3d &x1, const Vector3d &x2) const
+Object::Intersection Object::get_diffuse_intersection(const Vector3d &x1,
+		const Vector3d &x2) const
 {
 
 }
