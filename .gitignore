@@ -6,3 +6,4 @@ test/box_dsmc/**
 test/box_fluid/**
 test/sheath/**
 test/sheath_br/**
+test/sphere/**

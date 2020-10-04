@@ -12,6 +12,52 @@ using namespace Eigen;
 using PBC = ParticleBCtype;
 using FBC = FieldBCtype;
 
+void save_analytical_solution()
+{
+	double Te    = 1000;		/* [K] */
+	double v_I   = 11492.19;	/* [m/s] */
+	double m_I   = 16*AMU;		/* [kg] */
+	double n_ei  = 1e12;		/* [1/m^3] */
+	double x_L   = -0.03;		/* [m] */
+	double phi_0 = -0.1811;		/* [V] */
+
+	int N = 1000;
+
+	double y0 = m_I*v_I*v_I/(2*K*Te);
+
+	double lambda_D = sqrt(EPS0*K*Te/(n_ei*QE*QE));
+	double xi_0 = 0.0;
+	double xi_L = x_L/lambda_D;
+	double d_xi = xi_L/(N - 1);
+
+	double chi_0 = -QE*phi_0/(K*Te);
+
+	string fname = "test/sheath_br/sheath_analytic.csv";
+	ofstream out(fname);
+	if (!out.is_open()) {
+		cerr << "Could not open '" << fname << "'" << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	out << "x,phi_analytic\n";
+
+	/* Euler-Cauchy integration */
+	for (int i = 1; i < N; ++i) {
+		double xi  = xi_0  + d_xi;
+		double chi = chi_0 + d_xi*sqrt(4*y0*(sqrt(1 + chi_0/y0) - 1) + 2*(exp(-chi_0) - 1));
+
+		double x   = xi*lambda_D;
+		double phi = -chi*K*Te/QE;
+
+		out << -x << "," << phi << "\n";
+
+		xi_0 = xi;
+		chi_0 = chi;
+	}
+
+	out.close();
+}
+
 int main()
 {
 	Vector3d x_min = {0.00, -0.0015, -0.0015};
@@ -43,6 +89,8 @@ int main()
 
 	Solver solver(domain, 1000, 1e-4);
 	solver.set_reference_values(0, T*KToEv, n);
+
+	save_analytical_solution();
 
 	while (domain.advance_time()) {
 		solver.calc_potential_BR();
