@@ -19,7 +19,7 @@ int main()
 
 	Domain domain("test/sheath/sheath", 21, 3, 3);
 	domain.set_dimensions(x_min, x_max);
-	domain.set_time_step(1e-10);
+	domain.set_time_step(2e-10);
 	domain.set_iter_max(30000);
 
 	domain.set_bc_at(Xmin, BC(PBC::Open, FBC::Dirichlet,  0.0));
@@ -45,7 +45,8 @@ int main()
 	sources.push_back(make_unique<WarmBeam>(species[1], domain, x1, x2, ve, n, T));
 
 	Solver solver(domain, 10000, 1e-4);
-	//solver.set_reference_values(0, T*KToEv, n);
+
+	domain.check_formulation(T, n);
 
 	while (domain.advance_time()) {
 		solver.calc_potential();

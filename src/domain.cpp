@@ -187,6 +187,9 @@ bool Domain::steady_state(std::vector<Species> &species)
 {
 	if (is_steady_state) return true;
 
+	/* only check every 10 iterations */
+	if (iter%10 != 0) return false;
+
 	double n_tot = 0, I_tot = 0, E_tot = 0;
 	for(const Species &sp : species) {
 		n_tot += sp.get_sim_count();
@@ -269,12 +272,37 @@ Vector3d Domain::get_diffuse_vector(const Vector3d &n) const
 	return sin_theta*(cos(psi)*t1 + sin(psi)*t2) + cos_theta*n;
 }
 
+void Domain::check_formulation(double T_e, double n_e) const
+{
+	cout << "Formulation Check:" << endl;
+
+	double lambda_D = sqrt(EPS0*K*T_e/(n_e*QE*QE));
+	cout << "Debye length: " << lambda_D << " m" << endl;
+
+	double omega_p = sqrt(n_e*QE*QE/(EPS0*ME));
+	cout << "Plasma frequency: " << omega_p << " rad/s" << endl;
+
+	cout << "Spatial stability: Δx < 3.4 λ_D: "
+		 << (del_x.maxCoeff() < 3.4*lambda_D ? "true" : "false") << endl;
+
+	cout << "Temporal stability: Δt < 2/ω_p: "
+		 << (dt < 2/omega_p ? "true" : "false") << endl;
+}
+
 void Domain::print_info(std::vector<Species> &species) const
 {
 	cout << "iter: " << setw(6) << iter;
-	for(const Species &sp : species)
+
+	double v_max = 0;
+	for(const Species &sp : species) {
 		cout << "\t" << sp.name << ": " << setw(6) << sp.get_sim_count();
-	cout << endl;
+
+		for(const Particle &p : sp.particles)
+			if (p.v.norm() > v_max)
+				v_max = p.v.norm();
+	}
+
+	cout << "\tCFL: " << setw(6) << v_max*dt/del_x.maxCoeff() << endl;
 }
 
 void Domain::write_statistics(std::vector<Species> &species)
@@ -519,3 +547,4 @@ void Domain::save_velocity_histogram(std::vector<Species> &species) const
 		out.close();
 	}
 }
+

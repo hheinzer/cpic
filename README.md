@@ -20,6 +20,6 @@ Now you are all set, just run `make` in the root directory and the code should c
 
 ![](img/dsmc.gif)
 
-## Plasma Sheath using Boltzmann-Electron Model
+## Plasma Sheath, Comparison between Fully Kinetic vs. Boltzmann-Electron Model
 
-![](img/sheath_br.png)
+![](img/sheath.gif)

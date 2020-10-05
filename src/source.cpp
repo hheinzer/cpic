@@ -2,6 +2,7 @@
 
 using namespace std;
 using namespace Eigen;
+using namespace Const;
 
 ColdBeam::ColdBeam(Species &species, Domain &domain, const Vector3d &x1,
 		const Vector3d &x2, const Vector3d &v_drift, double n) :
@@ -50,7 +51,10 @@ void ColdBeam::sample()
 
 void WarmBeam::sample()
 {
-	double n_real = n*v_drift.norm()*A*domain.get_time_step();
+	/* mean value of positve thermal velocity */
+	double v_th_2 = sqrt(K*T/(2*PI*species.m));
+
+	double n_real = n*(v_drift.norm() + v_th_2)*A*domain.get_time_step();
 	int n_sim = (int)(n_real/species.w_mp0 + rng());
 
 	MatrixXd new_x(n_sim, 3), new_v(n_sim, 3);
