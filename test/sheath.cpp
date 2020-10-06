@@ -17,17 +17,17 @@ int main()
 	Vector3d x_min = {0.00, -0.0015, -0.0015};
 	Vector3d x_max = {0.03,  0.0015,  0.0015};
 
-	Domain domain("test/sheath/sheath", 41, 3, 3);
+	Domain domain("test/sheath/sheath", 21, 2, 2);
 	domain.set_dimensions(x_min, x_max);
 	domain.set_time_step(2e-10);
 	domain.set_iter_max(15000);
 
-	domain.set_bc_at(Xmin, BC(PBC::Open,      FBC::Dirichlet,  0.0));
-	domain.set_bc_at(Xmax, BC(PBC::Open,      FBC::Dirichlet, -0.18011));
-	domain.set_bc_at(Ymin, BC(PBC::Symmetric, FBC::Neumann));
-	domain.set_bc_at(Ymax, BC(PBC::Symmetric, FBC::Neumann));
-	domain.set_bc_at(Zmin, BC(PBC::Symmetric, FBC::Neumann));
-	domain.set_bc_at(Zmax, BC(PBC::Symmetric, FBC::Neumann));
+	domain.set_bc_at(Xmin, BC(PBC::Open,     FBC::Dirichlet,  0.0));
+	domain.set_bc_at(Xmax, BC(PBC::Open,     FBC::Dirichlet, -0.18011));
+	domain.set_bc_at(Ymin, BC(PBC::Periodic, FBC::Periodic));
+	domain.set_bc_at(Ymax, BC(PBC::Periodic, FBC::Periodic));
+	domain.set_bc_at(Zmin, BC(PBC::Periodic, FBC::Periodic));
+	domain.set_bc_at(Zmax, BC(PBC::Periodic, FBC::Periodic));
 
 	vector<Species> species;
 	species.push_back(Species("O+", 16*AMU,  QE, 10, domain));
@@ -70,8 +70,7 @@ int main()
 
 		if (domain.get_iter()%100 == 0 || domain.is_last_iter()) {
 			for(Species &sp : species) {
-				if (!domain.steady_state())
-					sp.sample_moments();
+				sp.sample_moments();
 				sp.calc_gas_properties();
 				sp.calc_macroparticle_count();
 			}

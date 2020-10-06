@@ -59,7 +59,6 @@ int main()
 				sp.sample_moments();
 				sp.calc_gas_properties();
 				sp.calc_macroparticle_count();
-				sp.clear_moments();
 			}
 
 			domain.print_info(species);

@@ -15,9 +15,9 @@ enum ChartesianDirection {X, Y, Z, W};
 
 enum BoundarySide {Xmin, Xmax, Ymin, Ymax, Zmin, Zmax};
 
-enum class FieldBCtype {Dirichlet, Neumann};
+enum class FieldBCtype {Dirichlet, Neumann, Periodic};
 
-enum class ParticleBCtype {Specular, Open, Diffuse, Symmetric};
+enum class ParticleBCtype {Specular, Open, Diffuse, Symmetric, Periodic};
 
 class Particle;
 class Species;
@@ -119,6 +119,8 @@ class Domain {
 		void eval_field_BC(BoundarySide side, VectorXd &b0, std::vector<T> &coeffs,
 				int u, int v) const;
 
+		bool is_periodic(BoundarySide side) const;
+
 		bool steady_state(std::vector<Species> &species);
 
 		bool steady_state() const {return is_steady_state;}
@@ -135,8 +137,6 @@ class Domain {
 		void save_particles(std::vector<Species> &species, int n_particles) const;
 
 		void save_velocity_histogram(std::vector<Species> &species) const;
-
-		void save_object_mesh(std::vector<std::unique_ptr<Object>> &objects) const;
 
 		const std::string prefix;
 		const int ni, nj, nk;
@@ -171,6 +171,8 @@ class Domain {
 		const double tol_steady_state = 0.001;
 
 		std::ofstream stats;
+
+		Vector3d L;		/* [m] domain lengths */
 };
 
 #endif

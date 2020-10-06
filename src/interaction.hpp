@@ -14,12 +14,12 @@ class Interaction {
 		virtual ~Interaction() {}
 };
 
-class DSMC : public Interaction {
+class DSMCneutral : public Interaction {
 	public:
 		using Vector3d = Eigen::Vector3d;
 		using RefPropMap = std::map<std::string, double>;
 
-		DSMC(Domain &domain, Species &species);
+		DSMCneutral(Domain &domain, Species &species);
 
 		void apply(double dt) override;
 

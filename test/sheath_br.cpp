@@ -108,18 +108,13 @@ int main()
 		domain.calc_charge_density(species);
 
 		if (domain.steady_state(species)) {
-			for(Species &sp : species) {
+			for(Species &sp : species)
 				sp.update_mean();
-				sp.sample_moments();
-			}
 		}
 
 		if (domain.get_iter()%10 == 0 || domain.is_last_iter()) {
 			for(Species &sp : species) {
-				if (!domain.steady_state()) {
-					sp.clear_moments();
-					sp.sample_moments();
-				}
+				sp.sample_moments();
 				sp.calc_gas_properties();
 				sp.calc_macroparticle_count();
 			}

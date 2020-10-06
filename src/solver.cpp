@@ -27,29 +27,44 @@ Solver::Solver(Domain &domain, int iter_max, double tol) :
 			for (int k = 0; k < nk; ++k) {
 				int u = at(i,j,k);
 
-				if (i == 0) {
+				if (i == 0 && !domain.is_periodic(Xmin)) {
 					domain.eval_field_BC(Xmin, b0, coeffs, u, at(i + 1,j,k));
-				} else if (i == domain.ni - 1) {
+
+				} else if (i == ni - 1 && !domain.is_periodic(Xmax)) {
 					domain.eval_field_BC(Xmax, b0, coeffs, u, at(i - 1,j,k));
-				} else if (j == 0) {
+
+				} else if (j == 0 && !domain.is_periodic(Ymin)) {
 					domain.eval_field_BC(Ymin, b0, coeffs, u, at(i,j + 1,k));
-				} else if (j == domain.nj - 1) {
+
+				} else if (j == nj - 1 && !domain.is_periodic(Ymax)) {
 					domain.eval_field_BC(Ymax, b0, coeffs, u, at(i,j - 1,k));
-				} else if (k == 0) {
+
+				} else if (k == 0 && !domain.is_periodic(Zmin)) {
 					domain.eval_field_BC(Zmin, b0, coeffs, u, at(i,j,k + 1));
-				} else if (k == domain.nk - 1) {
+
+				} else if (k == nk - 1 && !domain.is_periodic(Zmax)) {
 					domain.eval_field_BC(Zmax, b0, coeffs, u, at(i,j,k - 1));
+
 				} else {
-					coeffs.push_back(T(u, u,	  -2*(del_x_2q.sum())));
+					int u_xm = (i == 0      ? at(ni - 2,j,k) : at(i - 1,j,k));
+					int u_xp = (i == ni - 1 ? at(     1,j,k) : at(i + 1,j,k));
 
-					coeffs.push_back(T(u, at(i + 1,j,k), del_x_2q(X)));
-					coeffs.push_back(T(u, at(i - 1,j,k), del_x_2q(X)));
+					int u_ym = (j == 0      ? at(i,nj - 2,k) : at(i,j - 1,k));
+					int u_yp = (j == nj - 1 ? at(i,     1,k) : at(i,j + 1,k));
 
-					coeffs.push_back(T(u, at(i,j + 1,k), del_x_2q(Y)));
-					coeffs.push_back(T(u, at(i,j - 1,k), del_x_2q(Y)));
+					int u_zm = (k == 0      ? at(i,j,nk - 2) : at(i,j,k - 1));
+					int u_zp = (k == nk - 1 ? at(i,j,     1) : at(i,j,k + 1));
 
-					coeffs.push_back(T(u, at(i,j,k + 1), del_x_2q(Z)));
-					coeffs.push_back(T(u, at(i,j,k - 1), del_x_2q(Z)));
+					coeffs.push_back(T(u, u,    -2*(del_x_2q.sum())));
+
+					coeffs.push_back(T(u, u_xm, del_x_2q(X)));
+					coeffs.push_back(T(u, u_xp, del_x_2q(X)));
+
+					coeffs.push_back(T(u, u_ym, del_x_2q(Y)));
+					coeffs.push_back(T(u, u_yp, del_x_2q(Y)));
+
+					coeffs.push_back(T(u, u_zm, del_x_2q(Z)));
+					coeffs.push_back(T(u, u_zp, del_x_2q(Z)));
 
 					is_regular(u) = 1;
 				}
@@ -152,26 +167,32 @@ void Solver::calc_electric_field()
 			for (int k = 0; k < nk; ++k) {
 				int u = at(i, j, k);
 
-				if (i == 0) {
+				if (i == 0 && !domain.is_periodic(Xmin)) {
 					E(u,X) = -(-3*phi(at(i,j,k)) + 4*phi(at(i + 1,j,k)) - phi(at(i + 2,j,k)))/dx2;
-				} else if (i == ni - 1) {
+				} else if (i == ni - 1 && !domain.is_periodic(Xmax)) {
 					E(u,X) = -(phi(at(i - 2,j,k)) - 4*phi(at(i - 1,j,k)) + 3*phi(at(i,j,k)))/dx2;
+				} else if (i == 0 || i == ni - 1) {
+					E(u,X) = -(phi(at(1,j,k)) - phi(at(ni - 2,j,k)))/dx2;
 				} else {
 					E(u,X) = -(phi(at(i + 1,j,k)) - phi(at(i - 1,j,k)))/dx2;
 				}
 
-				if (j == 0) {
+				if (j == 0 && !domain.is_periodic(Ymin)) {
 					E(u,Y) = -(-3*phi(at(i,j,k)) + 4*phi(at(i,j + 1,k)) - phi(at(i,j + 2,k)))/dy2;
-				} else if (j == nj - 1) {
+				} else if (j == nj - 1 && !domain.is_periodic(Ymax)) {
 					E(u,Y) = -(phi(at(i,j - 2,k)) - 4*phi(at(i,j - 1,k)) + 3*phi(at(i,j,k)))/dy2;
+				} else if (i == 0 || i == ni - 1) {
+					E(u,Y) = -(phi(at(i,1,k)) - phi(at(i,nj - 2,k)))/dy2;
 				} else {
 					E(u,Y) = -(phi(at(i,j + 1,k)) - phi(at(i,j - 1,k)))/dy2;
 				}
 
-				if (k == 0) {
+				if (k == 0 && !domain.is_periodic(Zmin)) {
 					E(u,Z) = -(-3*phi(at(i,j,k)) + 4*phi(at(i,j,k + 1)) - phi(at(i,j,k + 2)))/dz2;
-				} else if (k == nk - 1) {
+				} else if (k == nk - 1 && !domain.is_periodic(Zmax)) {
 					E(u,Z) = -(phi(at(i,j,k - 2)) - 4*phi(at(i,j,k - 1)) + 3*phi(at(i,j,k)))/dz2;
+				} else if (i == 0 || i == ni - 1) {
+					E(u,Z) = -(phi(at(i,j,1)) - phi(at(i,j,nk - 2)))/dz2;
 				} else {
 					E(u,Z) = -(phi(at(i,j,k + 1)) - phi(at(i,j,k - 1)))/dz2;
 				}

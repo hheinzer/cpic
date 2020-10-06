@@ -5,7 +5,7 @@ using namespace std;
 using namespace Eigen;
 using namespace Const;
 
-DSMC::DSMC(Domain &domain, Species &species) :
+DSMCneutral::DSMCneutral(Domain &domain, Species &species) :
 	domain{domain}, species{species}
 {
 	n_cells = domain.n_cells;
@@ -25,7 +25,7 @@ DSMC::DSMC(Domain &domain, Species &species) :
 	df    = d_ref*sqrt(pow(2*K*T_ref/mr, omega - 0.5)/tgamma(2.5 - omega));
 }
 
-void DSMC::apply(double dt)
+void DSMCneutral::apply(double dt)
 {
 	vector<vector<Particle *>> pic(n_cells);
 	for(Particle &p : species.particles) {
@@ -70,14 +70,14 @@ void DSMC::apply(double dt)
 		sigma_vr_max = sigma_vr_max_tmp;
 }
 
-double DSMC::sigma(double vr_mag) const
+double DSMCneutral::sigma(double vr_mag) const
 {
 	/* Bird's Variable Hard Sphere */
 	double d = df*pow(1/(vr_mag*vr_mag), omega/2 - 0.25);
 	return PI*d*d;
 }
 
-void DSMC::collide(Vector3d &v1, Vector3d &v2, double m1, double m2) const
+void DSMCneutral::collide(Vector3d &v1, Vector3d &v2, double m1, double m2) const
 {
 	Vector3d vm = (m1*v1 + m2*v2)/(m1 + m2);
 

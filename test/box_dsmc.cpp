@@ -39,7 +39,7 @@ int main()
 	species[0].add_warm_box(x_min, x_max, n/2, {-100, 0, 0}, 1);
 
 	vector<unique_ptr<Interaction>> interactions;
-	interactions.push_back(make_unique<DSMC>(domain, species[0]));
+	interactions.push_back(make_unique<DSMCneutral>(domain, species[0]));
 
 	while (domain.advance_time()) {
 		for(auto &interaction : interactions)
@@ -55,7 +55,6 @@ int main()
 				sp.sample_moments();
 				sp.calc_gas_properties();
 				sp.calc_macroparticle_count();
-				sp.clear_moments();
 			}
 
 			domain.print_info(species);

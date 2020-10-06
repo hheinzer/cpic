@@ -2,7 +2,6 @@
 #include "random.hpp"
 #include "const.hpp"
 #include "species.hpp"
-#include "object.hpp"
 
 using namespace std;
 using namespace Eigen;
@@ -32,7 +31,8 @@ void Domain::set_dimensions(const Vector3d &x_min, const Vector3d &x_max)
 {
 	this->x_min = x_min;
 	this->x_max = x_max;
-	this->del_x = (x_max - x_min).array()/(nn.cast<double>().array() - 1);
+	this->L     = x_max - x_min;
+	this->del_x = L.array()/(nn.cast<double>().array() - 1);
 	calc_node_volume();
 }
 
@@ -181,7 +181,15 @@ void Domain::eval_field_BC(BoundarySide side, VectorXd &b0, std::vector<T> &coef
 			coeffs.push_back(T(u, v, -1));
 			b0(u) = bc.at(side)->get_value();
 			break;
+		case FieldBCtype::Periodic:
+			/* handled directly in solver */
+			break;
 	}
+}
+
+bool Domain::is_periodic(BoundarySide side) const
+{
+	return bc.at(side)->field_bc_type == FieldBCtype::Periodic;
 }
 
 bool Domain::steady_state(std::vector<Species> &species)
@@ -252,6 +260,13 @@ void Domain::eval_particle_BC(const Species &sp, int side, const Vector3d &X,
 				p.v = v_mag2*get_diffuse_vector(n);
 				break;
 			}
+		case ParticleBCtype::Periodic:
+			if (x_min(dim) <= p.x(dim)) {
+				p.x(dim) += L(dim);
+			} else if (p.x(dim) <= x_max(dim)) {
+				p.x(dim) -= L(dim);
+			}
+			break;
 	}
 }
 
@@ -559,57 +574,5 @@ void Domain::save_velocity_histogram(std::vector<Species> &species) const
 		}
 
 		out.close();
-	}
-}
-
-void Domain::save_object_mesh(std::vector<std::unique_ptr<Object>> &objects) const
-{
-	int i_object = 1;
-	for(auto &object : objects) {
-		stringstream ss;
-		ss << prefix << "_object_" << i_object << ".vtp";
-
-		ofstream out(ss.str());
-		if (!out.is_open()) {
-			cerr << "Could not open file " << ss.str() << endl;
-			exit(EXIT_FAILURE);
-		}
-
-		out << "<?xml version=\"1.0\"?>\n";
-		out << "<VTKFile type=\"PolyData\" version=\"0.1\" "
-			<< "byte_order=\"LittleEndian\">\n";
-		out << "<PolyData>\n";
-		out << "<Piece NumberOfPoints=\"" << object->mesh.nodes.size()
-			<< "\" NumberOfVerts=\"0\" NumberOfLines=\"0\" ";
-		out << "NumberOfStrips=\"0\" "
-			<< "NumberOfPolys=\"" << object->mesh.trias.size() << "\">\n";
-
-		out << "<Points>\n";
-		out << "<DataArray type=\"Float64\" NumberOfComponents=\"3\" "
-			<< "format=\"ascii\">\n";
-		for (const Node &node : object->mesh.nodes)
-			out << node.pos.transpose() << "\n";
-		out << "</DataArray>\n";
-		out << "</Points>\n";
-
-		out << "<Polys>\n";
-		out << "<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">\n";
-		for (const Triangle &tria : object->mesh.trias)
-			out << tria.con.transpose() << "\n";
-		out << "</DataArray>\n";
-
-		out << "<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">\n";
-		for (size_t i_tria = 0; i_tria < object->mesh.trias.size(); ++i_tria)
-			out << 3*(i_tria + 1) << "\n";
-		out << "</DataArray>\n";
-		out << "</Polys>\n";
-
-		out << "</Piece>\n";
-		out << "</PolyData>\n";
-		out << "</VTKFile>\n";
-
-		out.close();
-
-		++i_object;
 	}
 }

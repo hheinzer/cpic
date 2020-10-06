@@ -180,6 +180,42 @@ void Species::calc_number_density()
 		Vector3d l = domain.x_to_l(p.x);
 		domain.scatter(n, l, p.w_mp);
 	}
+
+	const int &ni = domain.ni;
+	const int &nj = domain.nj;
+	const int &nk = domain.nk;
+
+	/* synchronize number density, assuming uniform grid spacing */
+	if (domain.is_periodic(Xmin)) {
+		for (int j = 0; j < nj; ++j) {
+			for (int k = 0; k < nk; ++k) {
+				n(domain.at(0, j, k)) = 0.5*(n(domain.at(0, j, k))
+						+ n(domain.at(ni - 1, j, k)));
+				n(domain.at(ni - 1, j, k)) = n(domain.at(0, j, k));
+			}
+		}
+	}
+
+	if (domain.is_periodic(Ymin)) {
+		for (int i = 0; i < ni; ++i) {
+			for (int k = 0; k < nk; ++k) {
+				n(domain.at(i, 0, k)) = 0.5*(n(domain.at(i, 0, k))
+						+ n(domain.at(i, nj - 1, k)));
+				n(domain.at(i, nj - 1, k)) = n(domain.at(i, 0, k));
+			}
+		}
+	}
+
+	if (domain.is_periodic(Zmin)) {
+		for (int i = 0; i < nj; ++i) {
+			for (int j = 0; j < nj; ++j) {
+				n(domain.at(i, j, 0)) = 0.5*(n(domain.at(i, j, 0))
+						+ n(domain.at(i, j, nk - 1)));
+				n(domain.at(i, j, nk - 1)) = n(domain.at(i, j, 0));
+			}
+		}
+	}
+
 	n = n.array()/domain.V_node.array();
 }
 
