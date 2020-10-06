@@ -196,8 +196,8 @@ bool Domain::steady_state(std::vector<Species> &species)
 {
 	if (is_steady_state) return true;
 
-	/* only check every 10 iterations */
-	if (iter%10 != 0) return false;
+	/* only check every 25 iterations */
+	if (iter%25 != 0) return false;
 
 	double n_tot = 0, I_tot = 0, E_tot = 0;
 	for(const Species &sp : species) {
@@ -261,11 +261,7 @@ void Domain::eval_particle_BC(const Species &sp, int side, const Vector3d &X,
 				break;
 			}
 		case ParticleBCtype::Periodic:
-			if (x_min(dim) <= p.x(dim)) {
-				p.x(dim) += L(dim);
-			} else if (p.x(dim) <= x_max(dim)) {
-				p.x(dim) -= L(dim);
-			}
+			p.x += n*L(dim);
 			break;
 	}
 }
@@ -294,26 +290,26 @@ void Domain::check_formulation(double n_e, double T_e, const std::vector<double>
 	cout << "Formulation Check:" << endl;
 
 	double dx = del_x.maxCoeff();
-	cout << "  Grid spacing:                   "
+	cout << "  Grid spacing:     "
 		<< dx << " m" << endl;
-	cout << "  Timestep:                       "
+	cout << "  Timestep:         "
 		<< dt << " s" << endl;
 
 	double n_T_i_sum = 0;
 	for(size_t i = 0; i < z_i.size(); ++i)
 		n_T_i_sum += z_i[i]*z_i[i]*n_i[i]/T_i[i];
 	double lambda_D = sqrt(EPS0*K/(QE*QE)/(n_e/T_e + n_T_i_sum));
-	cout << "  Debye length:                   "
+	cout << "  Debye length:     "
 		<< lambda_D << " m" << endl;
 
 	double omega_p = sqrt(n_e*QE*QE/(EPS0*ME));
-	cout << "  Plasma frequency:               "
+	cout << "  Plasma frequency: "
 		<< omega_p << " rad/s" << endl;
 
-	cout << "  Spatial stability:  Δx < λ_D:   "
+	cout << "  Δx < λ_D:         "
 		 << (dx < lambda_D ? "true" : "false") << endl;
 
-	cout << "  Temporal stability: Δt < 1/ω_p: "
+	cout << "  Δt < 1/ω_p:       "
 		 << (dt < 1/omega_p ? "true" : "false") << endl << endl;
 }
 

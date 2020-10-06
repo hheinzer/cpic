@@ -147,7 +147,7 @@ void Solver::calc_potential_BR()
 	exit(EXIT_FAILURE);
 }
 
-void Solver::calc_electric_field()
+void Solver::calc_electric_field(const Vector3d &E_ext)
 {
 	const int &ni = domain.ni;
 	const int &nj = domain.nj;
@@ -167,35 +167,37 @@ void Solver::calc_electric_field()
 			for (int k = 0; k < nk; ++k) {
 				int u = at(i, j, k);
 
-				if (i == 0 && !domain.is_periodic(Xmin)) {
-					E(u,X) = -(-3*phi(at(i,j,k)) + 4*phi(at(i + 1,j,k)) - phi(at(i + 2,j,k)))/dx2;
-				} else if (i == ni - 1 && !domain.is_periodic(Xmax)) {
-					E(u,X) = -(phi(at(i - 2,j,k)) - 4*phi(at(i - 1,j,k)) + 3*phi(at(i,j,k)))/dx2;
-				} else if (i == 0 || i == ni - 1) {
+				if (domain.is_periodic(Xmin) && (i == 0 || i == ni - 1)) {
 					E(u,X) = -(phi(at(1,j,k)) - phi(at(ni - 2,j,k)))/dx2;
+				} else if (i == 0) {
+					E(u,X) = -(-3*phi(at(i,j,k)) + 4*phi(at(i + 1,j,k)) - phi(at(i + 2,j,k)))/dx2;
+				} else if (i == ni - 1) {
+					E(u,X) = -(phi(at(i - 2,j,k)) - 4*phi(at(i - 1,j,k)) + 3*phi(at(i,j,k)))/dx2;
 				} else {
 					E(u,X) = -(phi(at(i + 1,j,k)) - phi(at(i - 1,j,k)))/dx2;
 				}
 
-				if (j == 0 && !domain.is_periodic(Ymin)) {
-					E(u,Y) = -(-3*phi(at(i,j,k)) + 4*phi(at(i,j + 1,k)) - phi(at(i,j + 2,k)))/dy2;
-				} else if (j == nj - 1 && !domain.is_periodic(Ymax)) {
-					E(u,Y) = -(phi(at(i,j - 2,k)) - 4*phi(at(i,j - 1,k)) + 3*phi(at(i,j,k)))/dy2;
-				} else if (i == 0 || i == ni - 1) {
+				if (domain.is_periodic(Ymin) && (j == 0 || j == nj - 1)) {
 					E(u,Y) = -(phi(at(i,1,k)) - phi(at(i,nj - 2,k)))/dy2;
+				} else if (j == 0) {
+					E(u,Y) = -(-3*phi(at(i,j,k)) + 4*phi(at(i,j + 1,k)) - phi(at(i,j + 2,k)))/dy2;
+				} else if (j == nj - 1) {
+					E(u,Y) = -(phi(at(i,j - 2,k)) - 4*phi(at(i,j - 1,k)) + 3*phi(at(i,j,k)))/dy2;
 				} else {
 					E(u,Y) = -(phi(at(i,j + 1,k)) - phi(at(i,j - 1,k)))/dy2;
 				}
 
-				if (k == 0 && !domain.is_periodic(Zmin)) {
-					E(u,Z) = -(-3*phi(at(i,j,k)) + 4*phi(at(i,j,k + 1)) - phi(at(i,j,k + 2)))/dz2;
-				} else if (k == nk - 1 && !domain.is_periodic(Zmax)) {
-					E(u,Z) = -(phi(at(i,j,k - 2)) - 4*phi(at(i,j,k - 1)) + 3*phi(at(i,j,k)))/dz2;
-				} else if (i == 0 || i == ni - 1) {
+				if (domain.is_periodic(Zmin) && (k == 0 || k == nk - 1)) {
 					E(u,Z) = -(phi(at(i,j,1)) - phi(at(i,j,nk - 2)))/dz2;
+				} else if (k == 0) {
+					E(u,Z) = -(-3*phi(at(i,j,k)) + 4*phi(at(i,j,k + 1)) - phi(at(i,j,k + 2)))/dz2;
+				} else if (k == nk - 1) {
+					E(u,Z) = -(phi(at(i,j,k - 2)) - 4*phi(at(i,j,k - 1)) + 3*phi(at(i,j,k)))/dz2;
 				} else {
 					E(u,Z) = -(phi(at(i,j,k + 1)) - phi(at(i,j,k - 1)))/dz2;
 				}
+
+				E.row(u) += E_ext;
 			}
 		}
 	}

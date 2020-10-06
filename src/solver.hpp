@@ -9,6 +9,7 @@ class Solver {
 	public:
 		using T = Eigen::Triplet<double>;
 		using SpMat = Eigen::SparseMatrix<double>;
+		using Vector3d = Eigen::Vector3d;
 		using VectorXd = Eigen::VectorXd;
 
 		Solver(Domain &domain, int iter_max, double tol);
@@ -19,7 +20,7 @@ class Solver {
 
 		void calc_potential_BR();
 
-		void calc_electric_field();
+		void calc_electric_field(const Vector3d &E_ext = {0, 0, 0});
 
 	private:
 		Domain &domain;
