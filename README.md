@@ -19,3 +19,7 @@ Now you are all set, just run `make` in the root directory and the code should c
 ## Two Oxygen Velocity Distributions Merging (DSMC Collisions)
 
 ![](img/dsmc.gif)
+
+## Plasma Sheath, Comparison between Fully Kinetic vs. Boltzmann-Electron Model
+
+![](img/sheath.gif)

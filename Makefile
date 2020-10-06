@@ -1,12 +1,12 @@
 # CPIC - Particle in Cell Method, written in C++
 # See LICENSE file for copyright and license details.
 TARGET = libcpic
-TEST = sphere
+TEST = sheath
 
 # config {on, off}
 DEBUGGING = off
 NDEBUG = off
-OPENMP = off
+OPENMP = on
 PROFILING = off
 
 # programs
@@ -33,7 +33,7 @@ else
   endif
 endif
 ifeq ($(OPENMP), on)
-  FLAGS += -fopenmp
+  FLAGS += -fopenmp -DEIGEN_DONT_PARALLELIZE
 else
   FLAGS += -Wno-unknown-pragmas
 endif

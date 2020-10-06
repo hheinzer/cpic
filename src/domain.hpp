@@ -123,6 +123,9 @@ class Domain {
 
 		bool steady_state() const {return is_steady_state;}
 
+		void check_formulation(double n_e, double T_e, const std::vector<double> &z_i,
+				const std::vector<double> &n_i, const std::vector<double> &T_i) const;
+
 		void print_info(std::vector<Species> &species) const;
 
 		void write_statistics(std::vector<Species> &species);

@@ -25,6 +25,7 @@ Species::Species(string name, double m, double q, double w_mp0, Domain &domain) 
 double Species::get_real_count() const
 {
 	double w_mp_sum = 0;
+	#pragma omp parallel for reduction(+:w_mp_sum)
 	for(const Particle &p : particles)
 		w_mp_sum += p.w_mp;
 	return w_mp_sum;
@@ -33,6 +34,7 @@ double Species::get_real_count() const
 Vector3d Species::get_momentum() const
 {
 	Vector3d I = Vector3d::Zero();
+	#pragma omp parallel for
 	for(const Particle &p : particles)
 		I += p.w_mp*p.v;
 	return m*I;
@@ -41,6 +43,7 @@ Vector3d Species::get_momentum() const
 double Species::get_kinetic_energy() const
 {
 	double E_kin = 0;
+	#pragma omp parallel for reduction(+:E_kin)
 	for(const Particle &p : particles)
 		E_kin += p.w_mp*p.v.squaredNorm();
 	return 0.5*m*E_kin;
@@ -128,6 +131,7 @@ void Species::add_warm_box(const Vector3d &x1, const Vector3d &x2, double n,
 
 void Species::push_particles_leapfrog()
 {
+	#pragma omp parallel for
 	for(Particle &p : particles) {
 		p.dt += domain.get_time_step();
 
@@ -171,6 +175,7 @@ void Species::remove_dead_particles()
 void Species::calc_number_density()
 {
 	n.setZero();
+	#pragma omp parallel for
 	for(const Particle &p : particles) {
 		Vector3d l = domain.x_to_l(p.x);
 		domain.scatter(n, l, p.w_mp);
@@ -178,17 +183,14 @@ void Species::calc_number_density()
 	n = n.array()/domain.V_node.array();
 }
 
-void Species::clear_moments()
+void Species::sample_moments()
 {
 	n_sum.setZero();
 	nv_sum.setZero();
 	nuu_sum.setZero();
 	nvv_sum.setZero();
 	nww_sum.setZero();
-}
-
-void Species::sample_moments()
-{
+	#pragma omp parallel for
 	for(const Particle &p : particles) {
 		Vector3d l = domain.x_to_l(p.x);
 		domain.scatter(n_sum,   l, p.w_mp);
@@ -201,6 +203,7 @@ void Species::sample_moments()
 
 void Species::calc_gas_properties()
 {
+	#pragma omp parallel for
 	for (int u = 0; u < domain.n_nodes; ++u) {
 		double n_u = n_sum(u);
 
@@ -231,6 +234,7 @@ void Species::calc_gas_properties()
 void Species::calc_macroparticle_count()
 {
 	mp_count.setZero();
+	#pragma omp parallel for
 	for(const Particle &p : particles) {
 		int c = domain.x_to_c(p.x);
 		mp_count(c) += 1;
