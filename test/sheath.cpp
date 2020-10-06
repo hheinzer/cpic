@@ -14,13 +14,13 @@ using FBC = FieldBCtype;
 
 int main()
 {
-	Vector3d x_min = {0.00, -0.0015, -0.0015};
-	Vector3d x_max = {0.03,  0.0015,  0.0015};
+	Vector3d x_min = {0.00, -0.00075, -0.00075};
+	Vector3d x_max = {0.03,  0.00075,  0.00075};
 
 	Domain domain("test/sheath/sheath", 21, 2, 2);
 	domain.set_dimensions(x_min, x_max);
-	domain.set_time_step(2e-10);
-	domain.set_iter_max(15000);
+	domain.set_time_step(4e-10);
+	domain.set_iter_max(10000);
 
 	domain.set_bc_at(Xmin, BC(PBC::Open,     FBC::Dirichlet,  0.0));
 	domain.set_bc_at(Xmax, BC(PBC::Open,     FBC::Dirichlet, -0.18011));
@@ -36,8 +36,8 @@ int main()
 	const double n = 1e12;
 
 	vector<unique_ptr<Source>> sources;
-	Vector3d x1 = {0.00, -0.0015, -0.0015};
-	Vector3d x2 = {0.00,  0.0015,  0.0015};
+	Vector3d x1 = {0.00, -0.00075, -0.00075};
+	Vector3d x2 = {0.00,  0.00075,  0.00075};
 	Vector3d vi = {11492.19, 0, 0};
 	Vector3d ve = {1, 0, 0};
 	double   T  = 1000;
