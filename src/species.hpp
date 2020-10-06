@@ -56,8 +56,6 @@ class Species {
 
 		void calc_number_density();
 
-		void clear_moments();
-
 		void sample_moments();
 
 		void calc_gas_properties();

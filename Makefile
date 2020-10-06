@@ -6,7 +6,7 @@ TEST = sheath
 # config {on, off}
 DEBUGGING = off
 NDEBUG = off
-OPENMP = off
+OPENMP = on
 PROFILING = off
 
 # programs
@@ -33,7 +33,7 @@ else
   endif
 endif
 ifeq ($(OPENMP), on)
-  FLAGS += -fopenmp
+  FLAGS += -fopenmp -DEIGEN_DONT_PARALLELIZE
 else
   FLAGS += -Wno-unknown-pragmas
 endif

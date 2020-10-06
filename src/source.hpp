@@ -24,10 +24,8 @@ class ColdBeam : public Source {
 		Species &species;
 		Domain &domain;
 
-		Vector3d x1, x2, dx, v_drift;
-		double A, n;
-
-		int random_dirs[2], fix_dir;
+		Vector3d x1, x2, dx, l_E, v_drift;
+		double V, n, n_sim;
 };
 
 class WarmBeam : public ColdBeam {

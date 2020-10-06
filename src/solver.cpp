@@ -138,7 +138,7 @@ void Solver::calc_electric_field()
 	const int &nj = domain.nj;
 	const int &nk = domain.nk;
 
-	VectorXd &phi = domain.phi;
+	const VectorXd &phi = domain.phi;
 	MatrixXd &E  = domain.E;
 
 	Vector3d del_x = domain.get_del_x();
@@ -146,6 +146,7 @@ void Solver::calc_electric_field()
 	double dy2 = 2*del_x(Y);
 	double dz2 = 2*del_x(Z);
 
+	#pragma omp parallel for
 	for (int i = 0; i < ni; ++i) {
 		for (int j = 0; j < nj; ++j) {
 			for (int k = 0; k < nk; ++k) {
