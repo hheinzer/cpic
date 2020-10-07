@@ -23,3 +23,7 @@ Now you are all set, just run `make` in the root directory and the code should c
 ## Plasma Sheath, Comparison between Fully Kinetic vs. Boltzmann-Electron Model
 
 ![](img/sheath.gif)
+
+## Periodic Boundary Conditions with the Boltzmann-Electron Model
+
+![](img/periodic.gif)

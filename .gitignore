@@ -7,3 +7,4 @@ test/box_fluid/**
 test/sheath/**
 test/sheath_br/**
 test/sphere/**
+test/periodic/**
