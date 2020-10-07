@@ -196,9 +196,6 @@ bool Domain::steady_state(std::vector<Species> &species)
 {
 	if (is_steady_state) return true;
 
-	/* only check every 25 iterations */
-	if (iter%25 != 0) return false;
-
 	double n_tot = 0, I_tot = 0, E_tot = 0;
 	for(const Species &sp : species) {
 		n_tot += sp.get_sim_count();

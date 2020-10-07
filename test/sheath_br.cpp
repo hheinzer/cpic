@@ -60,29 +60,29 @@ void save_analytical_solution()
 
 int main()
 {
-	Vector3d x_min = {0.00, -0.0015, -0.0015};
-	Vector3d x_max = {0.03,  0.0015,  0.0015};
+	Vector3d x_min = {0.00, -0.00075, -0.00075};
+	Vector3d x_max = {0.03,  0.00075,  0.00075};
 
-	Domain domain("test/sheath_br/sheath", 21, 3, 3);
+	Domain domain("test/sheath_br/sheath", 21, 2, 2);
 	domain.set_dimensions(x_min, x_max);
 	domain.set_time_step(1e-8);
-	domain.set_iter_max(1000);
+	domain.set_iter_max(2000);
 
-	domain.set_bc_at(Xmin, BC(PBC::Open, FBC::Dirichlet,  0.0));
-	domain.set_bc_at(Xmax, BC(PBC::Open, FBC::Dirichlet, -0.18011));
-	domain.set_bc_at(Ymin, BC(PBC::Symmetric, FBC::Neumann));
-	domain.set_bc_at(Ymax, BC(PBC::Symmetric, FBC::Neumann));
-	domain.set_bc_at(Zmin, BC(PBC::Symmetric, FBC::Neumann));
-	domain.set_bc_at(Zmax, BC(PBC::Symmetric, FBC::Neumann));
+	domain.set_bc_at(Xmin, BC(PBC::Open,     FBC::Dirichlet,  0.0));
+	domain.set_bc_at(Xmax, BC(PBC::Open,     FBC::Dirichlet, -0.18011));
+	domain.set_bc_at(Ymin, BC(PBC::Periodic, FBC::Periodic));
+	domain.set_bc_at(Ymax, BC(PBC::Periodic, FBC::Periodic));
+	domain.set_bc_at(Zmin, BC(PBC::Periodic, FBC::Periodic));
+	domain.set_bc_at(Zmax, BC(PBC::Periodic, FBC::Periodic));
 
 	vector<Species> species;
-	species.push_back(Species("O+", 16*AMU,  QE, 10, domain));
+	species.push_back(Species("O+", 16*AMU, QE, 10, domain));
 
 	const double n = 1e12;
 
 	vector<unique_ptr<Source>> sources;
-	Vector3d x1 = {0.00, -0.0015, -0.0015};
-	Vector3d x2 = {0.00,  0.0015,  0.0015};
+	Vector3d x1 = {0.00, -0.00075, -0.00075};
+	Vector3d x2 = {0.00,  0.00075,  0.00075};
 	Vector3d vi = {11492.19, 0, 0};
 	double   T  = 1000;
 	sources.push_back(make_unique<WarmBeam>(species[0], domain, x1, x2, vi, n, T));
@@ -112,7 +112,7 @@ int main()
 				sp.update_mean();
 		}
 
-		if (domain.get_iter()%10 == 0 || domain.is_last_iter()) {
+		if (domain.get_iter()%100 == 0 || domain.is_last_iter()) {
 			for(Species &sp : species) {
 				sp.sample_moments();
 				sp.calc_gas_properties();
@@ -122,8 +122,8 @@ int main()
 			domain.print_info(species);
 			domain.write_statistics(species);
 			domain.save_fields(species);
-			domain.save_particles(species, 1000);
-			domain.save_velocity_histogram(species);
+			//domain.save_particles(species, 1000);
+			//domain.save_velocity_histogram(species);
 		}
 	}
 }
