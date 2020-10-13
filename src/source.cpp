@@ -29,8 +29,8 @@ void ColdBeam::sample()
 
 void WarmBeam::sample()
 {
-	double v_th_2 = sqrt(K*T/(2*PI*species.m));
-	double n_real = n*(v_drift.norm() + v_th_2)*A*domain.get_time_step();
+	double v_th = sqrt(K*T/(2*PI*species.m));
+	double n_real = n*(v_drift.norm() + v_th)*A*domain.get_time_step();
 	int n_sim = (int)(n_real/species.w_mp0 + rng());
 
 	for (int p = 0; p < n_sim; ++p) {
