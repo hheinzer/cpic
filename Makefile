@@ -1,7 +1,7 @@
 # CPIC - Particle in Cell Method, written in C++
 # See LICENSE file for copyright and license details.
 TARGET = libcpic
-TEST = periodic
+TEST = sheath
 
 # config {on, off}
 DEBUGGING = off
@@ -25,7 +25,7 @@ INCS = $(shell find src -type d -exec echo -I{} \;)
 # flags
 FLAGS = -Wall -Wextra -pedantic -pipe -ggdb3
 ifeq ($(DEBUGGING), on)
-  FLAGS += -Og
+  FLAGS += -O0
 else
   FLAGS += -Ofast -march=native -flto
   ifeq ($(NDEBUG), on)
@@ -33,7 +33,7 @@ else
   endif
 endif
 ifeq ($(OPENMP), on)
-  FLAGS += -fopenmp -DEIGEN_DONT_PARALLELIZE
+  FLAGS += -fopenmp
 else
   FLAGS += -Wno-unknown-pragmas
 endif

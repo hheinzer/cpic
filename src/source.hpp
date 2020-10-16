@@ -25,7 +25,7 @@ class ColdBeam : public Source {
 		Domain &domain;
 
 		Vector3d x1, x2, dx, v_drift;
-		double A = 1, n;
+		double V = 1, n, n_sim;
 };
 
 class WarmBeam : public ColdBeam {
