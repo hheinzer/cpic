@@ -4,7 +4,7 @@ using namespace std;
 using namespace Eigen;
 using namespace Const;
 
-ColdBeam::ColdBeam(Species &species, Domain &domain, const Vector3d &x1,
+ColdGhostCell::ColdGhostCell(Species &species, Domain &domain, const Vector3d &x1,
 		const Vector3d &x2, const Vector3d &v_drift, double n) :
 	species{species}, domain{domain}, x1{x1}, x2{x2}, v_drift{v_drift}, n{n}
 {
@@ -18,7 +18,7 @@ ColdBeam::ColdBeam(Species &species, Domain &domain, const Vector3d &x1,
 	n_sim = n*V/species.w_mp0;
 }
 
-void ColdBeam::sample()
+void ColdGhostCell::sample()
 {
 	for (int p = 0; p < n_sim; ++p) {
 		Vector3d v = v_drift;
@@ -28,7 +28,7 @@ void ColdBeam::sample()
 	}
 }
 
-void WarmBeam::sample()
+void WarmGhostCell::sample()
 {
 	for (int p = 0; p < n_sim; ++p) {
 		Vector3d v = v_drift + species.get_maxwellian_velocity(T);
