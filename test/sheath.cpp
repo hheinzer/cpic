@@ -42,8 +42,8 @@ int main()
 	Vector3d vi = {11492.19, 0, 0};
 	Vector3d ve = {1, 0, 0};
 	double   T  = 1000;
-	sources.push_back(make_unique<WarmBeam>(species[0], domain, x1, x2, vi, n, T));
-	sources.push_back(make_unique<WarmBeam>(species[1], domain, x1, x2, ve, n, T));
+	sources.push_back(make_unique<WarmGhostCell>(species[0], domain, x1, x2, vi, n, T));
+	sources.push_back(make_unique<WarmGhostCell>(species[1], domain, x1, x2, ve, n, T));
 
 	Solver solver(domain, 10000, 1e-4);
 

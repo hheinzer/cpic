@@ -38,7 +38,7 @@ int main()
 	Vector3d x1 = {0.00, -0.025, -0.025};
 	Vector3d x2 = {0.00,  0.025,  0.025};
 	Vector3d vi = {7000, 3000, 0};
-	sources.push_back(make_unique<ColdBeam>(species[0], domain, x1, x2, vi, n));
+	sources.push_back(make_unique<ColdGhostCell>(species[0], domain, x1, x2, vi, n));
 
 	Solver solver(domain, 10000, 1e-4);
 	solver.set_reference_values(0, 1.5, n);

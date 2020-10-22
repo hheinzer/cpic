@@ -85,7 +85,7 @@ int main()
 	Vector3d x2 = {0.00,  0.00075,  0.00075};
 	Vector3d vi = {11492.19, 0, 0};
 	double   T  = 1000;
-	sources.push_back(make_unique<WarmBeam>(species[0], domain, x1, x2, vi, n, T));
+	sources.push_back(make_unique<WarmGhostCell>(species[0], domain, x1, x2, vi, n, T));
 
 	Solver solver(domain, 1000, 1e-4);
 	solver.set_reference_values(0, T*KToEv, n);
