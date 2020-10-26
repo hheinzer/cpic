@@ -68,7 +68,7 @@ int main()
 	domain.set_time_step(1e-8);
 	domain.set_iter_max(2000);
 
-	domain.set_bc_at(Xmin, BC(PBC::Open,     FBC::Dirichlet,  0.0));
+	domain.set_bc_at(Xmin, BC(PBC::Open,     FBC::Dirichlet));
 	domain.set_bc_at(Xmax, BC(PBC::Open,     FBC::Dirichlet, -0.18011));
 	domain.set_bc_at(Ymin, BC(PBC::Periodic, FBC::Periodic));
 	domain.set_bc_at(Ymax, BC(PBC::Periodic, FBC::Periodic));
@@ -81,11 +81,11 @@ int main()
 	const double n = 1e12;
 
 	vector<unique_ptr<Source>> sources;
-	Vector3d x1 = {0.00, -0.00075, -0.00075};
-	Vector3d x2 = {0.00,  0.00075,  0.00075};
+	Vector3d x1 = {0.0, -0.00075, -0.00075};
+	Vector3d x2 = {0.0,  0.00075,  0.00075};
 	Vector3d vi = {11492.19, 0, 0};
 	double   T  = 1000;
-	sources.push_back(make_unique<WarmGhostCell>(species[0], domain, x1, x2, vi, n, T));
+	sources.push_back(make_unique<WarmBeam>(species[0], domain, x1, x2, vi, n, T));
 
 	Solver solver(domain, 1000, 1e-4);
 	solver.set_reference_values(0, T*KToEv, n);
@@ -107,7 +107,7 @@ int main()
 
 		domain.calc_charge_density(species);
 
-		if (domain.steady_state(species)) {
+		if (domain.steady_state(species, 5)) {
 			for(Species &sp : species)
 				sp.update_mean();
 		}

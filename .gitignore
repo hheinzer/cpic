@@ -4,7 +4,6 @@ lib/**
 test/box/**
 test/box_dsmc/**
 test/box_fluid/**
-test/sheath/**
-test/sheath_br/**
+test/sheath*/**
 test/sphere/**
 test/periodic/**

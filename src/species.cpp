@@ -25,7 +25,6 @@ Species::Species(string name, double m, double q, double w_mp0, Domain &domain) 
 double Species::get_real_count() const
 {
 	double w_mp_sum = 0;
-	#pragma omp parallel for reduction(+:w_mp_sum)
 	for(const Particle &p : particles)
 		w_mp_sum += p.w_mp;
 	return w_mp_sum;
@@ -34,7 +33,6 @@ double Species::get_real_count() const
 Vector3d Species::get_momentum() const
 {
 	Vector3d I = Vector3d::Zero();
-	#pragma omp parallel for
 	for(const Particle &p : particles)
 		I += p.w_mp*p.v;
 	return m*I;
@@ -43,7 +41,6 @@ Vector3d Species::get_momentum() const
 double Species::get_kinetic_energy() const
 {
 	double E_kin = 0;
-	#pragma omp parallel for reduction(+:E_kin)
 	for(const Particle &p : particles)
 		E_kin += p.w_mp*p.v.squaredNorm();
 	return 0.5*m*E_kin;
@@ -51,39 +48,29 @@ double Species::get_kinetic_energy() const
 
 double Species::get_maxwellian_velocity_magnitude(double T) const
 {
-	double v_th = sqrt(2*K*T/m);
-
-	const double v_min = -6*v_th;
-	const double v_max =  6*v_th;
-
-	Vector3d v;
-	for(int dim : {X, Y, Z}) {
-		while(true) {
-			v(dim) = v_min + rng()*(v_max - v_min);
-			double f = exp(-v(dim)*v(dim)/(v_th*v_th));
-			if (f > rng()) break;
-		};
-	}
-
-	return v.norm();
+	return get_maxwellian_velocity(T).norm();
 }
 
 Vector3d Species::get_maxwellian_velocity(double T) const
 {
-	double v_mag = get_maxwellian_velocity_magnitude(T);
+	double v_th = sqrt(2*K*T/m);
 
-	double t = 2*PI*rng();
-	double r = -1 + 2*rng();
-	double a = sqrt(1 - r*r);
+	Vector3d v;
+	for(int dim : {X, Y, Z}) {
+		v(dim) = sqrt(0.5)*v_th*rng.normal();
+	}
 
-	Vector3d v_dir(r, a*cos(t), a*sin(t));
-
-	return v_mag*v_dir;
+	return v;
 }
 
 void Species::add_particle(const Vector3d &x, const Vector3d &v)
 {
 	add_particle(x, v, domain.get_time_step(), w_mp0);
+}
+
+void Species::add_particle(const Vector3d &x, const Vector3d &v, double dt)
+{
+	add_particle(x, v, dt, w_mp0);
 }
 
 void Species::add_particle(const Vector3d &x, const Vector3d &v, double dt, double w_mp)
@@ -131,10 +118,7 @@ void Species::add_warm_box(const Vector3d &x1, const Vector3d &x2, double n,
 
 void Species::push_particles_leapfrog()
 {
-	#pragma omp parallel for
 	for(Particle &p : particles) {
-		p.dt += domain.get_time_step();
-
 		Vector3d l = domain.x_to_l(p.x);
 		Vector3d E_p = domain.gather(domain.E, l);
 
@@ -157,6 +141,8 @@ void Species::push_particles_leapfrog()
 				p.w_mp = 0;
 			}
 		}
+
+		p.dt += domain.get_time_step();
 	}
 }
 
@@ -175,7 +161,6 @@ void Species::remove_dead_particles()
 void Species::calc_number_density()
 {
 	n.setZero();
-	#pragma omp parallel for
 	for(const Particle &p : particles) {
 		Vector3d l = domain.x_to_l(p.x);
 		domain.scatter(n, l, p.w_mp);
@@ -217,6 +202,9 @@ void Species::calc_number_density()
 	}
 
 	n = n.array()/domain.V_node.array();
+
+	/* do the time averaging if mu > 0 */
+	n_mean = mu*n_mean + (1 - mu)*n;
 }
 
 void Species::sample_moments()
@@ -226,7 +214,7 @@ void Species::sample_moments()
 	nuu_sum.setZero();
 	nvv_sum.setZero();
 	nww_sum.setZero();
-	#pragma omp parallel for
+
 	for(const Particle &p : particles) {
 		Vector3d l = domain.x_to_l(p.x);
 		domain.scatter(n_sum,   l, p.w_mp);
@@ -239,7 +227,6 @@ void Species::sample_moments()
 
 void Species::calc_gas_properties()
 {
-	#pragma omp parallel for
 	for (int u = 0; u < domain.n_nodes; ++u) {
 		double n_u = n_sum(u);
 
@@ -270,16 +257,8 @@ void Species::calc_gas_properties()
 void Species::calc_macroparticle_count()
 {
 	mp_count.setZero();
-	#pragma omp parallel for
 	for(const Particle &p : particles) {
 		int c = domain.x_to_c(p.x);
 		mp_count(c) += 1;
 	}
 }
-
-void Species::update_mean()
-{
-	n_mean = (n.array() + n_samples*n_mean.array())/(n_samples + 1);
-	++n_samples;
-}
-

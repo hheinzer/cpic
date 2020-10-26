@@ -161,7 +161,6 @@ void Solver::calc_electric_field(const Vector3d &E_ext)
 	double dy2 = 2*del_x(Y);
 	double dz2 = 2*del_x(Z);
 
-	#pragma omp parallel for
 	for (int i = 0; i < ni; ++i) {
 		for (int j = 0; j < nj; ++j) {
 			for (int k = 0; k < nk; ++k) {

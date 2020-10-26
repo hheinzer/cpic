@@ -42,6 +42,8 @@ class Species {
 
 		void add_particle(const Vector3d &x, const Vector3d &v);
 
+		void add_particle(const Vector3d &x, const Vector3d &v, double dt);
+
 		void add_particle(const Vector3d &x, const Vector3d &v, double dt, double w_mp);
 
 		void add_cold_box(const Vector3d &x1, const Vector3d &x2, double n,
@@ -62,7 +64,7 @@ class Species {
 
 		void calc_macroparticle_count();
 
-		void update_mean();
+		void start_time_averaging(int n_a) {this->mu = 1.0 - 1.0/n_a;}
 
 		const std::string name;
 		const double m;		/* [kg] species mass */
@@ -77,7 +79,7 @@ class Species {
 		MatrixXd v_stream;
 
 	private:
-		int n_samples = 0;
+		double mu = 0.0;
 
 		VectorXd n_sum, nuu_sum, nvv_sum, nww_sum;
 		MatrixXd nv_sum;

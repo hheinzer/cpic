@@ -27,6 +27,26 @@ Domain::Domain(string prefix, int ni, int nj, int nk) :
 	n_e_BR = VectorXd::Zero(n_nodes);
 }
 
+Domain::~Domain()
+{
+	double total_time = get_wtime();
+	std::string unit = " s";
+
+	std::cout << "Total time: ";
+
+	if (total_time > 360) {
+		total_time /= 60;
+		unit = " min";
+
+		if (total_time > 60) {
+			total_time /= 60;
+			unit = " h";
+		}
+	}
+
+	std::cout << total_time << unit << std::endl;
+}
+
 void Domain::set_dimensions(const Vector3d &x_min, const Vector3d &x_max)
 {
 	this->x_min = x_min;
@@ -148,7 +168,7 @@ void Domain::calc_charge_density(std::vector<Species> &species)
 	rho.setZero();
 	for(const Species &sp : species) {
 		if (sp.q == 0) continue;
-		rho += sp.q*sp.n;
+		rho += sp.q*sp.n_mean;
 	}
 }
 
@@ -192,9 +212,11 @@ bool Domain::is_periodic(BoundarySide side) const
 	return bc.at(side)->field_bc_type == FieldBCtype::Periodic;
 }
 
-bool Domain::steady_state(std::vector<Species> &species)
+bool Domain::steady_state(std::vector<Species> &species, int check_every)
 {
 	if (is_steady_state) return true;
+
+	if (iter%check_every != 0) return false;
 
 	double n_tot = 0, I_tot = 0, E_tot = 0;
 	for(const Species &sp : species) {
@@ -318,7 +340,6 @@ void Domain::print_info(std::vector<Species> &species) const
 	for(const Species &sp : species) {
 		cout << "  " << sp.name << ":" << setw(6) << sp.get_sim_count();
 
-		#pragma omp parallel for
 		for(const Particle &p : sp.particles)
 			if (p.v.norm() > v_max)
 				v_max = p.v.norm();

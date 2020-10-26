@@ -9,21 +9,25 @@ class RandomNumberGenerator {
 		using VectorXd = Eigen::VectorXd;
 		using MatrixXd = Eigen::MatrixXd;
 
-		RandomNumberGenerator() : gen{std::random_device()()}, dist{0, 1} {}
+		RandomNumberGenerator() :
+			gen{std::random_device()()}, uni{0.0, 1.0}, nrm{0.0, 1.0} {}
 
-		double operator()() {return dist(gen);}
+		double operator()() {return uni(gen);}
 
 		VectorXd operator()(int ni) {
-			return VectorXd::NullaryExpr(ni, [&](){return dist(gen);});
+			return VectorXd::NullaryExpr(ni, [&](){return uni(gen);});
 		}
 
 		MatrixXd operator()(int ni, int nj) {
-			return MatrixXd::NullaryExpr(ni, nj, [&](){return dist(gen);});
+			return MatrixXd::NullaryExpr(ni, nj, [&](){return uni(gen);});
 		}
+
+		double normal() {return nrm(gen);}
 
 	private:
 		std::mt19937 gen;
-		std::uniform_real_distribution<double> dist;
+		std::uniform_real_distribution<double> uni;
+		std::normal_distribution<double> nrm;
 };
 
 extern RandomNumberGenerator rng;

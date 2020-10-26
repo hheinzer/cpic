@@ -69,7 +69,7 @@ class Domain {
 
 		Domain(std::string prefix, int ni, int nj, int nk);
 
-		~Domain() {std::cout << "Total time: " << get_wtime() << " s" << std::endl;}
+		~Domain();
 
 		void set_dimensions(const Vector3d &x_min, const Vector3d &x_max);
 
@@ -121,9 +121,13 @@ class Domain {
 
 		bool is_periodic(BoundarySide side) const;
 
-		bool steady_state(std::vector<Species> &species);
+		bool steady_state(std::vector<Species> &species, int check_every = 1);
 
 		bool steady_state() const {return is_steady_state;}
+
+		bool averaing_time() const {return is_averaing_time;}
+
+		void start_averaging_time() {this->is_averaing_time = true;}
 
 		void check_formulation(double n_e, double T_e, const std::vector<double> &z_i,
 				const std::vector<double> &n_i, const std::vector<double> &T_i) const;
@@ -166,7 +170,7 @@ class Domain {
 
 		std::chrono::time_point<std::chrono::high_resolution_clock> wtime_start;
 
-		bool is_steady_state = false;
+		bool is_steady_state = false, is_averaing_time = false;
 		double prev_n_tot = 0, prev_I_tot = 0, prev_E_tot = 0;
 		const double tol_steady_state = 0.001;
 
