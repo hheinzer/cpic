@@ -79,8 +79,8 @@ int main()
 			domain.print_info(species);
 			domain.write_statistics(species);
 			domain.save_fields(species);
-			domain.save_particles(species, 1000);
-			domain.save_velocity_histogram(species);
+			//domain.save_particles(species, 1000);
+			//domain.save_velocity_histogram(species);
 		}
 	}
 }
