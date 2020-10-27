@@ -52,10 +52,12 @@ int main()
 		solver.calc_potential();
 		solver.calc_electric_field();
 
+		#pragma omp parallel for
 		for (auto &source : sources)
 			source->sample();
 
-		for(Species &sp : species) {
+		#pragma omp parallel for
+		for (Species &sp : species) {
 			sp.push_particles_leapfrog();
 			sp.remove_dead_particles();
 			sp.calc_number_density();
@@ -79,8 +81,8 @@ int main()
 			domain.print_info(species);
 			domain.write_statistics(species);
 			domain.save_fields(species);
-			//domain.save_particles(species, 1000);
-			//domain.save_velocity_histogram(species);
+			domain.save_particles(species, 1000);
+			domain.save_velocity_histogram(species);
 		}
 	}
 }
