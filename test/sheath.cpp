@@ -52,11 +52,9 @@ int main()
 		solver.calc_potential();
 		solver.calc_electric_field();
 
-		#pragma omp parallel for
 		for (auto &source : sources)
 			source->sample();
 
-		#pragma omp parallel for
 		for (Species &sp : species) {
 			sp.push_particles_leapfrog();
 			sp.remove_dead_particles();

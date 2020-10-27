@@ -63,7 +63,7 @@ int main()
 	Vector3d x_min = {0.00, -0.00075, -0.00075};
 	Vector3d x_max = {0.03,  0.00075,  0.00075};
 
-	Domain domain("test/simulation/sheath", 21, 2, 2);
+	Domain domain("test/simulation/sheath_br", 21, 2, 2);
 	domain.set_dimensions(x_min, x_max);
 	domain.set_time_step(1e-8);
 	domain.set_iter_max(2000);
