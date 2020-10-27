@@ -18,7 +18,7 @@ int main()
 	x_max <<  0.1,  0.1,  0.1;
 	x_mid << (x_max + x_min)/2;
 
-	Domain domain("test/box/box", 21, 21, 21);
+	Domain domain("test/simulation/box", 21, 21, 21);
 	domain.set_dimensions(x_min, x_max);
 	domain.set_time_step(2e-10);
 	domain.set_iter_max(10000);

@@ -49,7 +49,7 @@ class ColdBeam : public Source {
 		Domain &domain;
 
 		Vector3d x1, x2, dx, v_drift, normal, tangent1, tangent2;
-		double A = 1, n, n_real;
+		double A = 1, n, n_real, V1, V2, V3;
 };
 
 class WarmBeam : public ColdBeam {
@@ -60,8 +60,6 @@ class WarmBeam : public ColdBeam {
 		void sample() override;
 
 		double T, v_th, a;
-		double V1, V2, V3; /* V1: velocity normal to the wall
-							  V2,V3: velocities tangential to the wall */
 };
 
 #endif

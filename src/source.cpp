@@ -65,7 +65,7 @@ WarmGhostCell::WarmGhostCell(Species &species, Domain &domain, const Vector3d &x
 	/* make sure it is an inflow */
 	assert(a >= 0);
 
-	/* overwrite n_real of ColdBeam */
+	/* overwrite n_real of ColdGhostCell */
 	n_real = n*A*domain.get_time_step()*v_th/(2*sqrt(PI))
 		*(exp(-a*a) + a*sqrt(PI)*(1 + erf(a)));
 }
@@ -116,7 +116,10 @@ ColdBeam::ColdBeam(Species &species, Domain &domain, const Vector3d &x1,
 	}
 	tangent2 = normal.cross(tangent1);
 
-	double V1 = v_drift.transpose()*normal;
+	V1 = v_drift.transpose()*normal;
+	V2 = v_drift.transpose()*tangent1;
+	V3 = v_drift.transpose()*tangent2;
+
 	n_real = n*V1*A*domain.get_time_step();
 }
 
@@ -137,10 +140,6 @@ WarmBeam::WarmBeam(Species &species, Domain &domain, const Vector3d &x1,
 	ColdBeam(species, domain, x1, x2, v_drift, n), T{T}
 {
 	v_th = sqrt(2*K*T/species.m);
-
-	V1 = v_drift.transpose()*normal;
-	V2 = v_drift.transpose()*tangent1;
-	V3 = v_drift.transpose()*tangent2;
 
 	/* speed ratio */
 	a = V1/v_th;

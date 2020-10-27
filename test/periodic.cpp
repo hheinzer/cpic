@@ -17,7 +17,7 @@ int main()
 	Vector3d x_min = {0.0, -0.1, -0.1};
 	Vector3d x_max = {0.5,  0.1,  0.1};
 
-	Domain domain("test/periodic/periodc", 51, 21, 21);
+	Domain domain("test/simulation/periodc", 51, 21, 21);
 	domain.set_dimensions(x_min, x_max);
 	domain.set_time_step(1e-7);
 	domain.set_iter_max(1000);
