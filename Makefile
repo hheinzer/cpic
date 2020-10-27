@@ -6,7 +6,7 @@ TEST = sheath
 # config {on, off}
 DEBUGGING = off
 NDEBUG = off
-OPENMP = on
+OPENMP = off
 PROFILING = off
 
 # programs

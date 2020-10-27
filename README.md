@@ -22,6 +22,11 @@ Now you are all set, just run `make` in the root directory and the code should c
 
 ## Plasma Sheath, Comparison between Fully Kinetic vs. Boltzmann-Electron Model
 
+- `phi_analytic` is the analytic solution
+- `phi_BR` is the Boltzmann-electron model solution
+- `phi_GA` is the fully kinetic solution using Garcia's infolow boundary condition
+- `phi_GC` is the fully kinetic solution using the ghost cell inflow boundary condition
+
 ![](img/sheath.gif)
 
 ## Periodic Boundary Conditions with the Boltzmann-Electron Model

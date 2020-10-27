@@ -63,7 +63,7 @@ int main()
 
 		domain.calc_charge_density(species);
 
-		if (domain.steady_state(species, 100) && !domain.averaing_time()) {
+		if (domain.steady_state(species, 500) && !domain.averaing_time()) {
 			domain.start_averaging_time();
 			for(Species &sp : species)
 				sp.start_time_averaging(5000);
