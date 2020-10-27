@@ -9,7 +9,8 @@ namespace Const
 	constexpr double ME	   = 9.10938215e-31;	/* [kg] electron mass */
 	constexpr double K	   = 1.380648e-23;		/* [J/K] Boltzmann constant */
 	constexpr double PI	   = 3.141592653589793; /* [rad] pi */
-	constexpr double KToEv = K/QE;				/* 1K in eV ~ 8.6173e-5 */
+	constexpr double KToEv = K/QE;				/* 1K in eV ~8.6173e-5 */
+	constexpr double EvToK = QE/K;				/* 1eV in K ~11604.563 */
 }
 
 #endif

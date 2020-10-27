@@ -212,7 +212,7 @@ bool Domain::is_periodic(BoundarySide side) const
 	return bc.at(side)->field_bc_type == FieldBCtype::Periodic;
 }
 
-bool Domain::steady_state(std::vector<Species> &species, int check_every)
+bool Domain::steady_state(std::vector<Species> &species, int check_every, double tol)
 {
 	if (is_steady_state) return true;
 
@@ -220,14 +220,14 @@ bool Domain::steady_state(std::vector<Species> &species, int check_every)
 
 	double n_tot = 0, I_tot = 0, E_tot = 0;
 	for(const Species &sp : species) {
-		n_tot += sp.get_sim_count();
+		n_tot += sp.get_real_count();
 		I_tot += sp.get_momentum().norm();
 		E_tot += sp.get_kinetic_energy();
 	}
 
-	if (	abs((n_tot - prev_n_tot)/prev_n_tot) < tol_steady_state &&
-			abs((I_tot - prev_I_tot)/prev_I_tot) < tol_steady_state &&
-			abs((E_tot - prev_E_tot)/prev_E_tot) < tol_steady_state)  {
+	if (	abs((n_tot - prev_n_tot)/prev_n_tot) < tol &&
+			abs((I_tot - prev_I_tot)/prev_I_tot) < tol &&
+			abs((E_tot - prev_E_tot)/prev_E_tot) < tol)  {
 		is_steady_state = true;
 		cout << "Steady state reached at iteration " << iter << endl;
 	}

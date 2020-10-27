@@ -121,7 +121,7 @@ class Domain {
 
 		bool is_periodic(BoundarySide side) const;
 
-		bool steady_state(std::vector<Species> &species, int check_every = 1);
+		bool steady_state(std::vector<Species> &species, int check_every, double tol);
 
 		bool steady_state() const {return is_steady_state;}
 
@@ -172,7 +172,6 @@ class Domain {
 
 		bool is_steady_state = false, is_averaing_time = false;
 		double prev_n_tot = 0, prev_I_tot = 0, prev_E_tot = 0;
-		const double tol_steady_state = 0.001;
 
 		std::ofstream stats;
 
