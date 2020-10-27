@@ -68,7 +68,15 @@ void Domain::set_bc_at(BoundarySide side, BC bc)
 		}
 	}
 
-	this->bc[side] = make_unique<BC>(bc);
+	this->bc[side].push_back(make_unique<BC>(bc));
+
+	/* make sure that all the particle boundary conditions are the same,
+	 * if there is more than one boundary condition for this side */
+	if (this->bc[side].size() > 1) {
+		ParticleBCtype particle_bc_type = this->bc[side][0]->particle_bc_type;
+		for (const auto& _bc : this->bc[side])
+			assert(_bc->particle_bc_type == particle_bc_type);
+	}
 }
 
 double Domain::get_wtime() const
@@ -189,27 +197,31 @@ void Domain::apply_boundary_conditions(const Species &sp, const Vector3d &x_old,
 }
 
 void Domain::eval_field_BC(BoundarySide side, VectorXd &b0, std::vector<T> &coeffs,
-		int u, int v) const
+		int u, int v, double x, double y, double z) const
 {
-	switch (bc.at(side)->field_bc_type) {
-		case FieldBCtype::Dirichlet:
-			coeffs.push_back(T(u, u, 1));
-			b0(u) = bc.at(side)->get_value();
-			break;
-		case FieldBCtype::Neumann:
-			coeffs.push_back(T(u, u,  1));
-			coeffs.push_back(T(u, v, -1));
-			b0(u) = bc.at(side)->get_value();
-			break;
-		case FieldBCtype::Periodic:
-			/* handled directly in solver */
-			break;
+	for (const auto& _bc : bc.at(side)) {
+		if (_bc->does_apply(x, y, z)) {
+			switch (_bc->field_bc_type) {
+				case FieldBCtype::Dirichlet:
+					coeffs.push_back(T(u, u, 1));
+					b0(u) = _bc->get_value(x, y, z);
+					break;
+				case FieldBCtype::Neumann:
+					coeffs.push_back(T(u, u,  1));
+					coeffs.push_back(T(u, v, -1));
+					b0(u) = _bc->get_value(x, y, z);
+					break;
+				case FieldBCtype::Periodic:
+					/* handled directly in solver */
+					break;
+			}
+		}
 	}
 }
 
 bool Domain::is_periodic(BoundarySide side) const
 {
-	return bc.at(side)->field_bc_type == FieldBCtype::Periodic;
+	return bc.at(side)[0]->field_bc_type == FieldBCtype::Periodic;
 }
 
 bool Domain::steady_state(std::vector<Species> &species, int check_every, double tol)
@@ -257,7 +269,7 @@ void Domain::calc_node_volume()
 void Domain::eval_particle_BC(const Species &sp, int side, const Vector3d &X,
 		const Vector3d &x_old, Particle &p, int dim, const Vector3d &n) const
 {
-	switch (bc.at(side)->particle_bc_type) {
+	switch (bc.at(side)[0]->particle_bc_type) {
 		case ParticleBCtype::Symmetric:
 		case ParticleBCtype::Specular:
 			p.x(dim) = 2*X(dim) - p.x(dim);
@@ -274,8 +286,8 @@ void Domain::eval_particle_BC(const Species &sp, int side, const Vector3d &X,
 				p.x = x_old + 0.999*t*(p.x - x_old);
 				double v_mag1 = p.v.norm();
 
-				double v_th = sp.get_maxwellian_velocity_magnitude(bc.at(side)->T);
-				double v_mag2 = v_mag1 + bc.at(side)->a_th*(v_th - v_mag1);
+				double v_th = sp.get_maxwellian_velocity_magnitude(bc.at(side)[0]->T);
+				double v_mag2 = v_mag1 + bc.at(side)[0]->a_th*(v_th - v_mag1);
 				p.v = v_mag2*get_diffuse_vector(n);
 				break;
 			}

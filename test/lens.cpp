@@ -17,14 +17,14 @@ int main()
 	Vector3d x_min = {0.0, -0.05, -0.05};
 	Vector3d x_max = {0.4,  0.05,  0.05};
 
-	Domain domain("test/simulation/einzel_lens", 41, 11, 11);
+	Domain domain("test/simulation/lens", 81, 21, 21);
 	domain.set_dimensions(x_min, x_max);
 	domain.set_time_step(1e-7);
 	domain.set_iter_max(1000);
 
 	double phi0 = 1315; /* [V] */
-	//double phi1 = 1300; /* [V] */
-	//double phi2 = -300; /* [V] */
+	double phi1 = 1300; /* [V] */
+	double phi2 = -300; /* [V] */
 
 	domain.set_bc_at(Xmin, BC(PBC::Open,     FBC::Dirichlet, phi0));
 	domain.set_bc_at(Xmax, BC(PBC::Open,     FBC::Neumann));
@@ -33,8 +33,20 @@ int main()
 	domain.set_bc_at(Zmin, BC(PBC::Specular, FBC::Neumann));
 	domain.set_bc_at(Zmax, BC(PBC::Specular, FBC::Neumann));
 
+	/* first lens */
+	domain.set_bc_at(Ymin, BC(PBC::Specular, FBC::Dirichlet, phi1, [](double x, double, double){ return (0.125 <= x ? (x <= 0.175 ? true : false) : false); }));
+	domain.set_bc_at(Ymax, BC(PBC::Specular, FBC::Dirichlet, phi1, [](double x, double, double){ return (0.125 <= x ? (x <= 0.175 ? true : false) : false); }));
+	domain.set_bc_at(Zmin, BC(PBC::Specular, FBC::Dirichlet, phi1, [](double x, double, double){ return (0.125 <= x ? (x <= 0.175 ? true : false) : false); }));
+	domain.set_bc_at(Zmax, BC(PBC::Specular, FBC::Dirichlet, phi1, [](double x, double, double){ return (0.125 <= x ? (x <= 0.175 ? true : false) : false); }));
+
+	/* second lens */
+	domain.set_bc_at(Ymin, BC(PBC::Specular, FBC::Dirichlet, phi2, [](double x, double, double){ return (0.225 <= x ? (x <= 0.275 ? true : false) : false); }));
+	domain.set_bc_at(Ymax, BC(PBC::Specular, FBC::Dirichlet, phi2, [](double x, double, double){ return (0.225 <= x ? (x <= 0.275 ? true : false) : false); }));
+	domain.set_bc_at(Zmin, BC(PBC::Specular, FBC::Dirichlet, phi2, [](double x, double, double){ return (0.225 <= x ? (x <= 0.275 ? true : false) : false); }));
+	domain.set_bc_at(Zmax, BC(PBC::Specular, FBC::Dirichlet, phi2, [](double x, double, double){ return (0.225 <= x ? (x <= 0.275 ? true : false) : false); }));
+
 	vector<Species> species;
-	species.push_back(Species("Xe+", 54*AMU,  QE, 100, domain));
+	species.push_back(Species("Xe+", 54*AMU,  QE, 1000, domain));
 	//species.push_back(Species("e-",     ME, -QE, 100000, domain));
 
 	const double n = 1e11;

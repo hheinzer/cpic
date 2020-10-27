@@ -25,38 +25,60 @@ class Object;
 
 class BC {
 	public:
-		BC() {}
+		using boolFunc = std::function<bool(double, double, double)>;
+		using doubleFunc = std::function<double(double, double, double)>;
 
 		BC(ParticleBCtype pbct, FieldBCtype fbct) :
 			particle_bc_type{pbct}, field_bc_type{fbct} {}
 
 		BC(ParticleBCtype pbct, FieldBCtype fbct, double value) :
+			particle_bc_type{pbct}, field_bc_type{fbct},
+			value{[=](double, double, double){ return value; }} {}
+
+		BC(ParticleBCtype pbct, FieldBCtype fbct, doubleFunc value) :
 			particle_bc_type{pbct}, field_bc_type{fbct}, value{value} {}
 
-		BC(ParticleBCtype pbct, double T, FieldBCtype fbct) :
-			particle_bc_type{pbct}, field_bc_type{fbct}, T{T} {}
+		BC(ParticleBCtype pbct, FieldBCtype fbct, double value, boolFunc does_apply) :
+			particle_bc_type{pbct}, field_bc_type{fbct},
+			value{[=](double, double, double){ return value; }},
+			_does_apply{does_apply} {}
 
-		BC(ParticleBCtype pbct, double T, double a_th, FieldBCtype fbct) :
-			particle_bc_type{pbct}, field_bc_type{fbct}, T{T}, a_th{a_th} {}
+		BC(ParticleBCtype pbct, FieldBCtype fbct, doubleFunc value, boolFunc does_apply) :
+			particle_bc_type{pbct}, field_bc_type{fbct}, value{value},
+			_does_apply{does_apply} {}
 
-		BC(ParticleBCtype pbct, double T, FieldBCtype fbct, double value) :
-			particle_bc_type{pbct}, field_bc_type{fbct}, T{T}, value{value} {}
+		BC(ParticleBCtype pbct, double T, double a_th, FieldBCtype fbct,
+				double value, boolFunc does_apply) :
+			particle_bc_type{pbct}, field_bc_type{fbct}, T{T}, a_th{a_th},
+			value{[=](double, double, double){ return value; }},
+			_does_apply{does_apply} {}
 
-		BC(ParticleBCtype pbct, double T, double a_th, FieldBCtype fbct, double value) :
-			particle_bc_type{pbct}, field_bc_type{fbct}, T{T}, a_th{a_th}, value{value} {}
+		BC(ParticleBCtype pbct, double T, double a_th, FieldBCtype fbct,
+				doubleFunc value, boolFunc does_apply) :
+			particle_bc_type{pbct}, field_bc_type{fbct}, T{T}, a_th{a_th},
+			value{value}, _does_apply{does_apply} {}
 
-		double get_value() const {return value;}
+		bool does_apply(double x, double y, double z) const {
+			return _does_apply(x, y, z);
+		}
 
-		void set_delta(double delta) {this->value *= delta;}
+		double get_value(double x, double y, double z) const {
+			return delta*value(x, y, z);
+		}
 
-		const ParticleBCtype particle_bc_type = ParticleBCtype::Specular;
-		const FieldBCtype field_bc_type = FieldBCtype::Dirichlet;
+		void set_delta(double delta) {this->delta = delta;}
 
-		const double T = 1000;
+		const ParticleBCtype particle_bc_type;
+		const FieldBCtype field_bc_type;
+
+		const double T = 1000;	/* [K] wall surface temperature */
 		const double a_th = 1;	/* thermal accomodation coefficient */
 
 	private:
-		double value = 0;
+		doubleFunc value = [](double, double, double){ return 0.0; };
+		double delta = 1.0;
+
+		boolFunc _does_apply = [](double, double, double){ return true; };
 };
 
 class Domain {
@@ -117,7 +139,7 @@ class Domain {
 				Particle &p) const;
 
 		void eval_field_BC(BoundarySide side, VectorXd &b0, std::vector<T> &coeffs,
-				int u, int v) const;
+				int u, int v, double x, double y, double z) const;
 
 		bool is_periodic(BoundarySide side) const;
 
@@ -163,7 +185,7 @@ class Domain {
 
 		Vector3d x_min, x_max, del_x;
 
-		std::map<int, std::unique_ptr<BC>> bc;
+		std::map<int, std::vector<std::unique_ptr<BC>>> bc;
 
 		double time = 0, dt;
 		int iter = -1, iter_max;

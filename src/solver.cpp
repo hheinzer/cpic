@@ -27,23 +27,27 @@ Solver::Solver(Domain &domain, int iter_max, double tol) :
 			for (int k = 0; k < nk; ++k) {
 				int u = at(i,j,k);
 
+				double x = i*del_x(X);
+				double y = j*del_x(Y);
+				double z = k*del_x(Z);
+
 				if (i == 0 && !domain.is_periodic(Xmin)) {
-					domain.eval_field_BC(Xmin, b0, coeffs, u, at(i + 1,j,k));
+					domain.eval_field_BC(Xmin, b0, coeffs, u, at(i + 1,j,k), x, y, z);
 
 				} else if (i == ni - 1 && !domain.is_periodic(Xmax)) {
-					domain.eval_field_BC(Xmax, b0, coeffs, u, at(i - 1,j,k));
+					domain.eval_field_BC(Xmax, b0, coeffs, u, at(i - 1,j,k), x, y, z);
 
 				} else if (j == 0 && !domain.is_periodic(Ymin)) {
-					domain.eval_field_BC(Ymin, b0, coeffs, u, at(i,j + 1,k));
+					domain.eval_field_BC(Ymin, b0, coeffs, u, at(i,j + 1,k), x, y, z);
 
 				} else if (j == nj - 1 && !domain.is_periodic(Ymax)) {
-					domain.eval_field_BC(Ymax, b0, coeffs, u, at(i,j - 1,k));
+					domain.eval_field_BC(Ymax, b0, coeffs, u, at(i,j - 1,k), x, y, z);
 
 				} else if (k == 0 && !domain.is_periodic(Zmin)) {
-					domain.eval_field_BC(Zmin, b0, coeffs, u, at(i,j,k + 1));
+					domain.eval_field_BC(Zmin, b0, coeffs, u, at(i,j,k + 1), x, y, z);
 
 				} else if (k == nk - 1 && !domain.is_periodic(Zmax)) {
-					domain.eval_field_BC(Zmax, b0, coeffs, u, at(i,j,k - 1));
+					domain.eval_field_BC(Zmax, b0, coeffs, u, at(i,j,k - 1), x, y, z);
 
 				} else {
 					int u_xm = (i == 0      ? at(ni - 2,j,k) : at(i - 1,j,k));
