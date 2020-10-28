@@ -135,6 +135,11 @@ class Domain {
 
 		void calc_charge_density(std::vector<Species> &species);
 
+		void reverse_boundary_conditions() {
+			for (BoundarySide side : {Xmin, Xmax, Ymin, Ymax, Zmin, Zmax})
+				std::reverse(bc.at(side).begin(), bc.at(side).end());
+		}
+
 		void apply_boundary_conditions(const Species &sp, const Vector3d &x_old,
 				Particle &p) const;
 

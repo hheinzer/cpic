@@ -22,6 +22,8 @@ Solver::Solver(Domain &domain, int iter_max, double tol) :
 	const int &nj = domain.nj;
 	const int &nk = domain.nk;
 
+	domain.reverse_boundary_conditions();
+
 	for (int i = 0; i < ni; ++i) {
 		for (int j = 0; j < nj; ++j) {
 			for (int k = 0; k < nk; ++k) {

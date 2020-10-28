@@ -78,7 +78,7 @@ void Species::add_particle(const Vector3d &x, const Vector3d &v, double dt, doub
 	Vector3d l = domain.x_to_l(x);
 	Vector3d E_p = domain.gather(domain.E, l);
 	Vector3d dv = q/m*E_p*0.5*domain.get_time_step();
-	particles.emplace_back(Particle(x, v - dv, dt, w_mp));
+	particles.push_back(Particle(x, v - dv, dt, w_mp));
 }
 
 void Species::add_cold_box(const Vector3d &x1, const Vector3d &x2, double n,

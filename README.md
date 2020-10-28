@@ -32,3 +32,7 @@ Now you are all set, just run `make` in the root directory and the code should c
 ## Periodic Boundary Conditions with the Boltzmann-Electron Model
 
 ![](img/periodic.gif)
+
+## Xenon Ions being Accelerated by an Ion-Optic
+
+![](img/lens.gif)

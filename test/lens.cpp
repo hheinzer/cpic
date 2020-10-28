@@ -14,56 +14,46 @@ using FBC = FieldBCtype;
 
 int main()
 {
-	Vector3d x_min = {0.0, -0.05, -0.05};
-	Vector3d x_max = {0.4,  0.05,  0.05};
+	Vector3d x_min = {0.0, -0.025, -0.025};
+	Vector3d x_max = {0.3,  0.025,  0.025};
 
-	Domain domain("test/simulation/lens", 81, 21, 21);
+	Domain domain("test/simulation/lens", 31, 11, 11);
 	domain.set_dimensions(x_min, x_max);
-	domain.set_time_step(1e-7);
+	domain.set_time_step(0.5e-7);
 	domain.set_iter_max(1000);
 
-	double phi0 = 1315; /* [V] */
-	double phi1 = 1300; /* [V] */
-	double phi2 = -300; /* [V] */
+	double phi_l = -100; /* [V] */
 
-	domain.set_bc_at(Xmin, BC(PBC::Open,     FBC::Dirichlet, phi0));
+	domain.set_bc_at(Xmin, BC(PBC::Open,     FBC::Neumann));
 	domain.set_bc_at(Xmax, BC(PBC::Open,     FBC::Neumann));
-	domain.set_bc_at(Ymin, BC(PBC::Specular, FBC::Neumann));
-	domain.set_bc_at(Ymax, BC(PBC::Specular, FBC::Neumann));
-	domain.set_bc_at(Zmin, BC(PBC::Specular, FBC::Neumann));
-	domain.set_bc_at(Zmax, BC(PBC::Specular, FBC::Neumann));
+	domain.set_bc_at(Ymin, BC(PBC::Specular, FBC::Dirichlet));
+	domain.set_bc_at(Ymax, BC(PBC::Specular, FBC::Dirichlet));
+	domain.set_bc_at(Zmin, BC(PBC::Specular, FBC::Dirichlet));
+	domain.set_bc_at(Zmax, BC(PBC::Specular, FBC::Dirichlet));
 
-	auto lense1 = [](double x, double, double){
-		return (0.125 <= x ? (x <= 0.175 ? true : false) : false); };
-	domain.set_bc_at(Ymin, BC(PBC::Specular, FBC::Dirichlet, phi1, lense1));
-	domain.set_bc_at(Ymax, BC(PBC::Specular, FBC::Dirichlet, phi1, lense1));
-	domain.set_bc_at(Zmin, BC(PBC::Specular, FBC::Dirichlet, phi1, lense1));
-	domain.set_bc_at(Zmax, BC(PBC::Specular, FBC::Dirichlet, phi1, lense1));
-
-	auto lense2 = [](double x, double, double){
-		return (0.225 <= x ? (x <= 0.275 ? true : false) : false); };
-	domain.set_bc_at(Ymin, BC(PBC::Specular, FBC::Dirichlet, phi2, lense2));
-	domain.set_bc_at(Ymax, BC(PBC::Specular, FBC::Dirichlet, phi2, lense2));
-	domain.set_bc_at(Zmin, BC(PBC::Specular, FBC::Dirichlet, phi2, lense2));
-	domain.set_bc_at(Zmax, BC(PBC::Specular, FBC::Dirichlet, phi2, lense2));
+	auto lense = [](double x, double, double){
+		return (0.1 <= x ? (x <= 0.2 ? true : false) : false); };
+	domain.set_bc_at(Ymin, BC(PBC::Specular, FBC::Dirichlet, phi_l, lense));
+	domain.set_bc_at(Ymax, BC(PBC::Specular, FBC::Dirichlet, phi_l, lense));
+	domain.set_bc_at(Zmin, BC(PBC::Specular, FBC::Dirichlet, phi_l, lense));
+	domain.set_bc_at(Zmax, BC(PBC::Specular, FBC::Dirichlet, phi_l, lense));
 
 	vector<Species> species;
-	species.push_back(Species("Xe+", 54*AMU,  QE, 1000, domain));
+	species.push_back(Species("Xe+", 54*AMU,  QE, 1e4, domain));
 	//species.push_back(Species("e-",     ME, -QE, 100000, domain));
 
 	const double n = 1e11;
 
 	vector<unique_ptr<Source>> sources;
-	Vector3d x1 = {0.0, -0.05, -0.05};
-	Vector3d x2 = {0.0,  0.05,  0.05};
-	Vector3d v  = {2500, 0, 0};
-	double   Ti = 450;
-	double   Te = 3.5*EvToK;
-	sources.push_back(make_unique<WarmBeam>(species[0], domain, x1, x2, v, n, Ti));
-	//sources.push_back(make_unique<WarmGhostCell>(species[1], domain, x1, x2, v, n, Te));
+	Vector3d x1 = {0.0, -0.02, -0.02};
+	Vector3d x2 = {0.0,  0.02,  0.02};
+	Vector3d v  = {1e4, 0, 0};
+	double   T  = 1000;
+	sources.push_back(make_unique<WarmGhostCell>(species[0], domain, x1, x2, v, n, T));
+	//sources.push_back(make_unique<WarmGhostCell>(species[1], domain, x1, x2, v, n, T));
 
 	Solver solver(domain, 10000, 1e-4);
-	solver.set_reference_values(phi0, Te, n);
+	solver.set_reference_values(0.0, T, n);
 
 	//domain.check_formulation(n, T, {1}, {n}, {T});
 
@@ -88,7 +78,7 @@ int main()
 				sp.start_time_averaging(100);
 		}
 
-		if (domain.get_iter()%50 == 0 || domain.is_last_iter()) {
+		if (domain.get_iter()%10 == 0 || domain.is_last_iter()) {
 			for(Species &sp : species) {
 				sp.sample_moments();
 				sp.calc_gas_properties();

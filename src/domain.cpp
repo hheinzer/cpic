@@ -215,6 +215,9 @@ void Domain::eval_field_BC(BoundarySide side, VectorXd &b0, std::vector<T> &coef
 					/* handled directly in solver */
 					break;
 			}
+
+			/* apply only the first BC that is applicable */
+			break;
 		}
 	}
 }
@@ -506,7 +509,7 @@ void Domain::save_particles(std::vector<Species> &species, int n_particles) cons
 		for(const Particle &p : sp.particles) {
 			np += dp;
 			if (np > 1) {
-				p_out.emplace_back(&p);
+				p_out.push_back(&p);
 				np -= 1;
 			}
 		}
