@@ -19,7 +19,7 @@ int main()
 
 	Domain domain("test/simulation/lens", 31, 11, 11);
 	domain.set_dimensions(x_min, x_max);
-	domain.set_time_step(0.5e-7);
+	domain.set_time_step(1e-7);
 	domain.set_iter_max(1000);
 
 	double phi_l = -100; /* [V] */
