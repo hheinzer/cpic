@@ -14,12 +14,12 @@ class Interaction {
 		virtual ~Interaction() {}
 };
 
-class DSMCneutral : public Interaction {
+class DSMC_Bird : public Interaction {
 	public:
 		using Vector3d = Eigen::Vector3d;
 		using RefPropMap = std::map<std::string, double>;
 
-		DSMCneutral(Domain &domain, Species &species);
+		DSMC_Bird(Domain &domain, Species &species);
 
 		void apply(double dt) override;
 
@@ -30,9 +30,11 @@ class DSMCneutral : public Interaction {
 		const RefPropMap d_ref_map = {	/* [m] reference diameter */
 			{"O", 4.07e-10}
 		};
+
 		const RefPropMap T_ref_map = {	/* [K] reference temperature */
 			{"O", 273.15}
 		};
+
 		const RefPropMap omega_map = {	/* [-] viscosity index */
 			{"O", 0.77}
 		};
@@ -52,6 +54,18 @@ class DSMCneutral : public Interaction {
 		double sigma(double v_r) const;
 
 		void collide(Vector3d &v1, Vector3d &v2, double m1, double m2) const;
+};
+
+class DSMC_Nanbu : public Interaction {
+	public:
+
+		DSMC_Nanbu(Domain &domain, Species &species);
+
+		void apply(double dt) override;
+
+	private:
+		Domain &domain;
+		Species &species;
 };
 
 #endif

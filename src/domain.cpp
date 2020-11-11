@@ -588,12 +588,11 @@ void Domain::save_velocity_histogram(std::vector<Species> &species) const
 		MatrixXd bins = MatrixXd::Zero(n_bins, 4);
 		for(const Particle &p : sp.particles) {
 			for(int dim : {X, Y, Z}) {
-				bins(round((p.v(dim) - v_min(dim))/dv(dim)), dim) += 1;
+				bins(round((p.v(dim) - v_min(dim))/dv(dim)), dim)
+					+= 1/(dv(dim)*sp.particles.size());
 			}
-			bins(round(p.v.norm()/dv(W)), W) += 1;
+			bins(round(p.v.norm()/dv(W)), W) += 1/(dv(W)*sp.particles.size());
 		}
-
-		bins /= sp.particles.size();
 
 		out << "v_x,f(v_x),v_y,f(v_y),v_z,f(v_z),v_mag,f(v_mag)\n";
 		for (int b = 0; b < n_bins; ++b) {
