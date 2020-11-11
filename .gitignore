@@ -1,6 +1,8 @@
 bin/**
 obj/**
 lib/**
+**/.cache
 **/*.vti
 **/*.vtp
 **/*.csv
+
