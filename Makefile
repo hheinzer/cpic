@@ -1,7 +1,7 @@
 # CPIC - Particle in Cell Method, written in C++
 # See LICENSE file for copyright and license details.
 TARGET = libcpic
-TEST = lens
+TEST = box_dsmc_nanbu
 
 # config {on, off}
 DEBUGGING = off
@@ -27,7 +27,7 @@ FLAGS = -Wall -Wextra -pedantic -pipe -ggdb3
 ifeq ($(DEBUGGING), on)
   FLAGS += -O0
 else
-  FLAGS += -Ofast -march=native -flto
+  FLAGS += -O3 -march=native -flto
   ifeq ($(NDEBUG), on)
     FLAGS += -DNDEBUG
   endif

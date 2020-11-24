@@ -46,7 +46,7 @@ int main()
 
 	Solver solver(domain, 10000, 1e-4);
 
-	domain.check_formulation(n, T, {1}, {n}, {T});
+	domain.check_formulation(n, T);
 
 	while (domain.advance_time()) {
 		solver.calc_potential();
@@ -63,7 +63,7 @@ int main()
 
 		domain.calc_charge_density(species);
 
-		if (domain.steady_state(species, 500) && !domain.averaing_time()) {
+		if (!domain.averaing_time() && domain.steady_state(species, 500, 0.01)) {
 			domain.start_averaging_time();
 			for(Species &sp : species)
 				sp.start_time_averaging(5000);

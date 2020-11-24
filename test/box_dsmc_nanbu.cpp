@@ -1,9 +1,9 @@
 #include <vector>
 #include <Eigen/Dense>
 #include "const.hpp"
+#include "interaction.hpp"
 #include "domain.hpp"
 #include "species.hpp"
-#include "source.hpp"
 #include "solver.hpp"
 
 using namespace std;
@@ -60,56 +60,52 @@ void save_analytical_solution()
 
 int main()
 {
-	Vector3d x_min = {0.00, -0.00075, -0.00075};
-	Vector3d x_max = {0.03,  0.00075,  0.00075};
+	Vector3d x_min, x_max, x_mid;
+	x_min << -0.1, -0.1, -0.1;
+	x_max <<  0.1,  0.1,  0.1;
 
-	Domain domain("test/simulation/sheath_br", 21, 2, 2);
+	Domain domain("test/simulation/box_dsmc_nanbu", 21, 21, 21);
 	domain.set_dimensions(x_min, x_max);
-	domain.set_time_step(1e-8);
-	domain.set_iter_max(2000);
+	domain.set_time_step(1e-7);
+	domain.set_iter_max(10000);
 
-	domain.set_bc_at(Xmin, BC(PBC::Open,     FBC::Dirichlet));
-	domain.set_bc_at(Xmax, BC(PBC::Open,     FBC::Dirichlet, -0.18011));
-	domain.set_bc_at(Ymin, BC(PBC::Periodic, FBC::Periodic));
-	domain.set_bc_at(Ymax, BC(PBC::Periodic, FBC::Periodic));
-	domain.set_bc_at(Zmin, BC(PBC::Periodic, FBC::Periodic));
-	domain.set_bc_at(Zmax, BC(PBC::Periodic, FBC::Periodic));
+	domain.set_bc_at(Xmin, BC(PBC::Symmetric, FBC::Dirichlet));
+	domain.set_bc_at(Xmax, BC(PBC::Symmetric, FBC::Dirichlet));
+	domain.set_bc_at(Ymin, BC(PBC::Symmetric, FBC::Dirichlet));
+	domain.set_bc_at(Ymax, BC(PBC::Symmetric, FBC::Dirichlet));
+	domain.set_bc_at(Zmin, BC(PBC::Symmetric, FBC::Dirichlet));
+	domain.set_bc_at(Zmax, BC(PBC::Symmetric, FBC::Dirichlet));
 
 	vector<Species> species;
-	species.push_back(Species("O+", 16*AMU, QE, 10, domain));
+	species.push_back(Species("e-", ME, -QE, 1e6, domain));
 
-	const double n = 1e12;
+	const double n = 1e11;
+	const double Te = 1.5*EvToK;
+	const double Tx = 1.3*Te/(1.0/3.0*1.3+2.0/3.0);
+	const double Ty = Te/(1.0/3.0*1.3+2.0/3.0);
+	const double Tz = Te/(1.0/3.0*1.3+2.0/3.0);
 
-	vector<unique_ptr<Source>> sources;
-	Vector3d x1 = {0.0, -0.00075, -0.00075};
-	Vector3d x2 = {0.0,  0.00075,  0.00075};
-	Vector3d vi = {11492.19, 0, 0};
-	double   T  = 1000;
-	sources.push_back(make_unique<WarmBeam>(species[0], domain, x1, x2, vi, n, T));
+	species[0].add_warm_box(x_min, x_max, n, {0, 0, 0}, {Tx, Ty, Tz});
 
-	Solver solver(domain, 1000, 1e-4);
-	solver.set_reference_values(0, T*KToEv, n);
+	vector<unique_ptr<Interaction>> interactions;
+	interactions.push_back(make_unique<DSMC_Nanbu>(domain, species[0]));
 
-	save_analytical_solution();
+	//Solver solver(domain, 10000, 1e-4);
+
+	domain.check_formulation(n, Te);
 
 	while (domain.advance_time()) {
-		domain.calc_charge_density(species);
-		solver.calc_potential_BR();
-		solver.calc_electric_field();
+		//domain.calc_charge_density(species);
+		//solver.calc_potential();
+		//solver.calc_electric_field();
 
-		for (auto &source : sources)
-			source->sample();
+		for(auto &interaction : interactions)
+			interaction->apply(domain.get_time_step());
 
 		for(Species &sp : species) {
 			sp.push_particles_leapfrog();
-			sp.remove_dead_particles();
+			//sp.remove_dead_particles();
 			sp.calc_number_density();
-		}
-
-		if (!domain.averaing_time() && domain.steady_state(species, 50, 0.01)) {
-			domain.start_averaging_time();
-			for(Species &sp : species)
-				sp.start_time_averaging(100);
 		}
 
 		if (domain.get_iter()%100 == 0 || domain.is_last_iter()) {
@@ -122,8 +118,8 @@ int main()
 			domain.print_info(species);
 			domain.write_statistics(species);
 			domain.save_fields(species);
-			//domain.save_particles(species, 1000);
-			//domain.save_velocity_histogram(species);
+			domain.save_particles(species, 1000);
+			domain.save_velocity_histogram(species);
 		}
 	}
 }

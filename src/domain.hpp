@@ -156,8 +156,9 @@ class Domain {
 
 		void start_averaging_time() {this->is_averaing_time = true;}
 
-		void check_formulation(double n_e, double T_e, const std::vector<double> &z_i,
-				const std::vector<double> &n_i, const std::vector<double> &T_i) const;
+		void check_formulation(double n_e, double T_e) const;
+
+		void calc_coulomb_log(std::vector<Species> &species, Species &e);
 
 		void print_info(std::vector<Species> &species) const;
 
@@ -179,6 +180,7 @@ class Domain {
 		VectorXd phi;		/* [V] electric potential */
 		MatrixXd E;			/* [V/m] electric field */
 		VectorXd n_e_BR;	/* [1/m^3] electron density (Boltzmann relation) */
+		VectorXd ln_Lambda;	/* [-] coulomb logarithm */
 
 	private:
 		void calc_node_volume();
