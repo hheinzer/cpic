@@ -97,3 +97,30 @@ void DSMC_Bird::collide(Vector3d &v1, Vector3d &v2, double m1, double m2) const
 	v1 = vm + m2/(m1 + m2)*vr;
 	v2 = vm - m1/(m1 + m2)*vr;
 }
+
+
+DSMC_Nanbu::DSMC_Nanbu(Domain &domain, vector<Species> &species) :
+	domain{domain}, species{species}
+{
+	n_cells = domain.n_cells;
+	n_species = species.size();
+}
+
+void DSMC_Nanbu::apply(double dt)
+{
+	vector<vector<vector<Particle *>>> sic(n_species);
+	for(Species &s : species) {
+		vector<vector<Particle *>> pic(n_cells);
+
+		for(Particle &p : s.particles) {
+			int c = domain.x_to_c(p.x);
+			pic[c].push_back(&p);
+		}
+
+		sic.push_back(pic);
+	}
+
+	/* perform like collisions */
+
+	/* perform unlike collisions */
+}

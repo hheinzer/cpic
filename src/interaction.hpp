@@ -59,13 +59,16 @@ class DSMC_Bird : public Interaction {
 class DSMC_Nanbu : public Interaction {
 	public:
 
-		DSMC_Nanbu(Domain &domain, Species &species);
+		DSMC_Nanbu(Domain &domain, std::vector<Species> &species);
 
 		void apply(double dt) override;
 
 	private:
 		Domain &domain;
-		Species &species;
+		std::vector<Species> &species;
+
+		int n_cells;
+		int n_species;
 };
 
 #endif

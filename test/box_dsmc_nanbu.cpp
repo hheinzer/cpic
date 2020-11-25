@@ -12,47 +12,37 @@ using namespace Eigen;
 using PBC = ParticleBCtype;
 using FBC = FieldBCtype;
 
+const double ne = 1e11;							/* [1/m^3] */
+const double Te = 100;							/* [K] */
+const double Ty = Te/(1.0/3.0*1.3+2.0/3.0);		/* [K] */
+const double Tx = 1.3*Ty;						/* [K] */
+
 void save_analytical_solution()
 {
-	double Te    = 1000;		/* [K] */
-	double v_I   = 11492.19;	/* [m/s] */
-	double m_I   = 16*AMU;		/* [kg] */
-	double n_ei  = 1e12;		/* [1/m^3] */
-	double x_L   = -0.03;		/* [m] */
-	double phi_0 = -0.1811;		/* [V] */
+	double lambda_D = sqrt(EPS0*K*Te/(ne*QE*QE));
+	double ln_Lambda = log(lambda_D*2*PI*EPS0*3*K*Te/(QE*QE));
+	double tau0 = 1/((ne*pow(QE, 4)*ln_Lambda
+			/(8*PI*sqrt(2)*pow(EPS0, 2)*sqrt(ME)*pow(K*Te, 1.5))));
 
-	int N = 1000;
+	double t_hat_end = 12;
+	double dt_hat = 0.02;
 
-	double y0 = m_I*v_I*v_I/(2*K*Te);
+	double dT0 = Tx - Ty;
 
-	double lambda_D = sqrt(EPS0*K*Te/(n_ei*QE*QE));
-	double xi_0 = 0.0;
-	double xi_L = x_L/lambda_D;
-	double d_xi = xi_L/(N - 1);
-
-	double chi_0 = -QE*phi_0/(K*Te);
-
-	string fname = "test/sheath_br/sheath_analytic.csv";
+	string fname = "test/simulation/nanbu_analytic.csv";
 	ofstream out(fname);
 	if (!out.is_open()) {
 		cerr << "Could not open '" << fname << "'" << endl;
 		exit(EXIT_FAILURE);
 	}
 
-	out << "x,phi_analytic\n";
+	out << "t,Tx,Ty\n";
 
-	/* Euler-Cauchy integration */
-	for (int i = 1; i < N; ++i) {
-		double xi  = xi_0  + d_xi;
-		double chi = chi_0 + d_xi*sqrt(4*y0*(sqrt(1 + chi_0/y0) - 1) + 2*(exp(-chi_0) - 1));
+	for (double t_hat = 0; t_hat <= t_hat_end; t_hat += dt_hat) {
+		double t = t_hat*tau0;
+		double dT = dT0*exp(-8/(5*sqrt(2*PI))*t_hat);
 
-		double x   = xi*lambda_D;
-		double phi = -chi*K*Te/QE;
-
-		out << -x << "," << phi << "\n";
-
-		xi_0 = xi;
-		chi_0 = chi;
+		out << t << ',' << Te + 2.0/3.0*dT << ',' << Te - 1.0/3.0*dT  << endl;
 	}
 
 	out.close();
@@ -60,39 +50,35 @@ void save_analytical_solution()
 
 int main()
 {
+	save_analytical_solution();
+
 	Vector3d x_min, x_max, x_mid;
-	x_min << -0.1, -0.1, -0.1;
-	x_max <<  0.1,  0.1,  0.1;
+	x_min << -0.02, -0.02, -0.02;
+	x_max <<  0.02,  0.02,  0.02;
 
 	Domain domain("test/simulation/box_dsmc_nanbu", 21, 21, 21);
 	domain.set_dimensions(x_min, x_max);
-	domain.set_time_step(1e-7);
-	domain.set_iter_max(10000);
+	domain.set_time_step(1e-8);
+	domain.set_iter_max(1000);
 
-	domain.set_bc_at(Xmin, BC(PBC::Symmetric, FBC::Dirichlet));
-	domain.set_bc_at(Xmax, BC(PBC::Symmetric, FBC::Dirichlet));
-	domain.set_bc_at(Ymin, BC(PBC::Symmetric, FBC::Dirichlet));
-	domain.set_bc_at(Ymax, BC(PBC::Symmetric, FBC::Dirichlet));
-	domain.set_bc_at(Zmin, BC(PBC::Symmetric, FBC::Dirichlet));
-	domain.set_bc_at(Zmax, BC(PBC::Symmetric, FBC::Dirichlet));
+	domain.set_bc_at(Xmin, BC(PBC::Periodic, FBC::Periodic));
+	domain.set_bc_at(Xmax, BC(PBC::Periodic, FBC::Periodic));
+	domain.set_bc_at(Ymin, BC(PBC::Periodic, FBC::Periodic));
+	domain.set_bc_at(Ymax, BC(PBC::Periodic, FBC::Periodic));
+	domain.set_bc_at(Zmin, BC(PBC::Periodic, FBC::Periodic));
+	domain.set_bc_at(Zmax, BC(PBC::Periodic, FBC::Periodic));
 
 	vector<Species> species;
-	species.push_back(Species("e-", ME, -QE, 1e6, domain));
+	species.push_back(Species("e-", ME, -QE, 1e2, domain));
 
-	const double n = 1e11;
-	const double Te = 1.5*EvToK;
-	const double Tx = 1.3*Te/(1.0/3.0*1.3+2.0/3.0);
-	const double Ty = Te/(1.0/3.0*1.3+2.0/3.0);
-	const double Tz = Te/(1.0/3.0*1.3+2.0/3.0);
-
-	species[0].add_warm_box(x_min, x_max, n, {0, 0, 0}, {Tx, Ty, Tz});
+	species[0].add_warm_box(x_min, x_max, ne, {0, 0, 0}, {Tx, Ty, Ty});
 
 	vector<unique_ptr<Interaction>> interactions;
 	interactions.push_back(make_unique<DSMC_Nanbu>(domain, species[0]));
 
 	//Solver solver(domain, 10000, 1e-4);
 
-	domain.check_formulation(n, Te);
+	domain.check_formulation(ne, Te);
 
 	while (domain.advance_time()) {
 		//domain.calc_charge_density(species);
@@ -108,7 +94,7 @@ int main()
 			sp.calc_number_density();
 		}
 
-		if (domain.get_iter()%100 == 0 || domain.is_last_iter()) {
+		if (domain.get_iter()%10 == 0 || domain.is_last_iter()) {
 			for(Species &sp : species) {
 				sp.sample_moments();
 				sp.calc_gas_properties();
