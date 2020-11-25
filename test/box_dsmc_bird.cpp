@@ -18,7 +18,7 @@ int main()
 	x_min << -0.1, -0.1, -0.1;
 	x_max <<  0.1,  0.1,  0.1;
 
-	Domain domain("test/simulation/box_dsmc", 21, 21, 21);
+	Domain domain("test/simulation/box_dsmc_bird", 21, 21, 21);
 	domain.set_dimensions(x_min, x_max);
 	domain.set_time_step(1e-7);
 	domain.set_iter_max(10000);
@@ -34,12 +34,15 @@ int main()
 	species.push_back(Species("O", 16*AMU, 0, 1e13, domain));
 
 	const double n = 1e20;
+	const double T = 1;
 
-	species[0].add_warm_box(x_min, x_max, n/2, { 100, 0, 0}, 1);
-	species[0].add_warm_box(x_min, x_max, n/2, {-100, 0, 0}, 1);
+	species[0].add_warm_box(x_min, x_max, n/2, { 100, 0, 0}, T);
+	species[0].add_warm_box(x_min, x_max, n/2, {-100, 0, 0}, T);
 
 	vector<unique_ptr<Interaction>> interactions;
-	interactions.push_back(make_unique<DSMCneutral>(domain, species[0]));
+	interactions.push_back(make_unique<DSMC_Bird>(domain, species[0]));
+
+	domain.check_formulation(n, T);
 
 	while (domain.advance_time()) {
 		for(auto &interaction : interactions)

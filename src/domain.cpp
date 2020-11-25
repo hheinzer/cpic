@@ -25,6 +25,7 @@ Domain::Domain(string prefix, int ni, int nj, int nk) :
 	phi    = VectorXd::Zero(n_nodes);
 	E      = MatrixXd::Zero(n_nodes, 3);
 	n_e_BR = VectorXd::Zero(n_nodes);
+	ln_Lambda = VectorXd::Zero(n_nodes);
 }
 
 Domain::~Domain()
@@ -318,8 +319,7 @@ Vector3d Domain::get_diffuse_vector(const Vector3d &n) const
 	return sin_theta*(cos(psi)*t1 + sin(psi)*t2) + cos_theta*n;
 }
 
-void Domain::check_formulation(double n_e, double T_e, const std::vector<double> &z_i,
-		const std::vector<double> &n_i, const std::vector<double> &T_i) const
+void Domain::check_formulation(double n_e, double T_e) const
 {
 	cout << "Formulation Check:" << endl;
 
@@ -329,10 +329,7 @@ void Domain::check_formulation(double n_e, double T_e, const std::vector<double>
 	cout << "  Timestep:         "
 		<< dt << " s" << endl;
 
-	double n_T_i_sum = 0;
-	for(size_t i = 0; i < z_i.size(); ++i)
-		n_T_i_sum += z_i[i]*z_i[i]*n_i[i]/T_i[i];
-	double lambda_D = sqrt(EPS0*K/(QE*QE)/(n_e/T_e + n_T_i_sum));
+	double lambda_D = sqrt(EPS0*K*T_e/(n_e*QE*QE));
 	cout << "  Debye length:     "
 		<< lambda_D << " m" << endl;
 
@@ -345,6 +342,24 @@ void Domain::check_formulation(double n_e, double T_e, const std::vector<double>
 
 	cout << "  Δt < 1/ω_p:       "
 		 << (dt < 1/omega_p ? "true" : "false") << endl << endl;
+}
+
+void Domain::calc_coulomb_log(std::vector<Species> &species, Species &e)
+{
+	VectorXd lambda_D = sqrt(EPS0*K*e.T.array()/(e.n_mean.array()*QE*QE));
+
+	VectorXd T = VectorXd::Zero(e.T.size());
+	VectorXd n_tot = VectorXd::Zero(e.n_mean.size());
+	for (const Species &s : species) {
+		T.array() += s.n_mean.array()*s.T.array();
+		n_tot += s.n_mean;
+	}
+	T.array() /= n_tot.array();
+
+	ln_Lambda = log(lambda_D.array()*2*PI*EPS0*3*K*T.array()/(QE*QE));
+
+	ln_Lambda = ln_Lambda.unaryExpr([&](double x){
+			return isfinite(x) ? (x > 0 ? x : 0) : 0; });
 }
 
 void Domain::print_info(std::vector<Species> &species) const
@@ -444,6 +459,11 @@ void Domain::save_fields(std::vector<Species> &species) const
 	out << "<DataArray Name=\"n.fluid_e-\" NumberOfComponents=\"1\" "
 		<< "format=\"ascii\" type=\"Float64\">\n";
 	out << n_e_BR;
+	out << "</DataArray>\n";
+
+	out << "<DataArray Name=\"ln_Lambda\" NumberOfComponents=\"1\" "
+		<< "format=\"ascii\" type=\"Float64\">\n";
+	out << ln_Lambda;
 	out << "</DataArray>\n";
 
 	for (const Species &sp : species) {
@@ -588,12 +608,11 @@ void Domain::save_velocity_histogram(std::vector<Species> &species) const
 		MatrixXd bins = MatrixXd::Zero(n_bins, 4);
 		for(const Particle &p : sp.particles) {
 			for(int dim : {X, Y, Z}) {
-				bins(round((p.v(dim) - v_min(dim))/dv(dim)), dim) += 1;
+				bins(round((p.v(dim) - v_min(dim))/dv(dim)), dim)
+					+= 1/(dv(dim)*sp.particles.size());
 			}
-			bins(round(p.v.norm()/dv(W)), W) += 1;
+			bins(round(p.v.norm()/dv(W)), W) += 1/(dv(W)*sp.particles.size());
 		}
-
-		bins /= sp.particles.size();
 
 		out << "v_x,f(v_x),v_y,f(v_y),v_z,f(v_z),v_mag,f(v_mag)\n";
 		for (int b = 0; b < n_bins; ++b) {

@@ -5,7 +5,7 @@ using namespace std;
 using namespace Eigen;
 using namespace Const;
 
-DSMCneutral::DSMCneutral(Domain &domain, Species &species) :
+DSMC_Bird::DSMC_Bird(Domain &domain, Species &species) :
 	domain{domain}, species{species}
 {
 	n_cells = domain.n_cells;
@@ -25,7 +25,7 @@ DSMCneutral::DSMCneutral(Domain &domain, Species &species) :
 	df    = d_ref*sqrt(pow(2*K*T_ref/mr, omega - 0.5)/tgamma(2.5 - omega));
 }
 
-void DSMCneutral::apply(double dt)
+void DSMC_Bird::apply(double dt)
 {
 	vector<vector<Particle *>> pic(n_cells);
 	for(Particle &p : species.particles) {
@@ -70,14 +70,14 @@ void DSMCneutral::apply(double dt)
 		sigma_vr_max = sigma_vr_max_tmp;
 }
 
-double DSMCneutral::sigma(double vr_mag) const
+double DSMC_Bird::sigma(double vr_mag) const
 {
 	/* Bird's Variable Hard Sphere */
 	double d = df*pow(1/(vr_mag*vr_mag), omega/2 - 0.25);
 	return PI*d*d;
 }
 
-void DSMCneutral::collide(Vector3d &v1, Vector3d &v2, double m1, double m2) const
+void DSMC_Bird::collide(Vector3d &v1, Vector3d &v2, double m1, double m2) const
 {
 	Vector3d vm = (m1*v1 + m2*v2)/(m1 + m2);
 
@@ -96,4 +96,31 @@ void DSMCneutral::collide(Vector3d &v1, Vector3d &v2, double m1, double m2) cons
 
 	v1 = vm + m2/(m1 + m2)*vr;
 	v2 = vm - m1/(m1 + m2)*vr;
+}
+
+
+DSMC_Nanbu::DSMC_Nanbu(Domain &domain, vector<Species> &species) :
+	domain{domain}, species{species}
+{
+	n_cells = domain.n_cells;
+	n_species = species.size();
+}
+
+void DSMC_Nanbu::apply(double dt)
+{
+	vector<vector<vector<Particle *>>> sic(n_species);
+	for(Species &s : species) {
+		vector<vector<Particle *>> pic(n_cells);
+
+		for(Particle &p : s.particles) {
+			int c = domain.x_to_c(p.x);
+			pic[c].push_back(&p);
+		}
+
+		sic.push_back(pic);
+	}
+
+	/* perform like collisions */
+
+	/* perform unlike collisions */
 }

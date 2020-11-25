@@ -93,6 +93,7 @@ int main()
 	save_analytical_solution();
 
 	while (domain.advance_time()) {
+		domain.calc_charge_density(species);
 		solver.calc_potential_BR();
 		solver.calc_electric_field();
 
@@ -105,11 +106,10 @@ int main()
 			sp.calc_number_density();
 		}
 
-		domain.calc_charge_density(species);
-
-		if (domain.steady_state(species, 5)) {
+		if (!domain.averaing_time() && domain.steady_state(species, 50, 0.01)) {
+			domain.start_averaging_time();
 			for(Species &sp : species)
-				sp.update_mean();
+				sp.start_time_averaging(100);
 		}
 
 		if (domain.get_iter()%100 == 0 || domain.is_last_iter()) {
