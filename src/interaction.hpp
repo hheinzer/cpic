@@ -58,8 +58,9 @@ class DSMC_Bird : public Interaction {
 
 class DSMC_Nanbu : public Interaction {
 	public:
+		using Vector3d = Eigen::Vector3d;
 
-		DSMC_Nanbu(Domain &domain, std::vector<Species> &species);
+		DSMC_Nanbu(Domain &domain, std::vector<Species> &species, double Te, double ne);
 
 		void apply(double dt) override;
 
@@ -67,8 +68,13 @@ class DSMC_Nanbu : public Interaction {
 		Domain &domain;
 		std::vector<Species> &species;
 
+		double lambda_D;
+
 		int n_cells;
 		int n_species;
+
+		void collide(Vector3d &v1, Vector3d &v2, double m1, double m2,
+				double T_tot, double q1, double q2, double n2, double dt) const;
 };
 
 #endif

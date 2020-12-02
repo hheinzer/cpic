@@ -158,7 +158,9 @@ class Domain {
 
 		void check_formulation(double n_e, double T_e) const;
 
-		void calc_coulomb_log(std::vector<Species> &species, Species &e);
+		void calc_total_temperature(std::vector<Species> &species);
+
+		void calc_coulomb_log(Species &e);
 
 		void print_info(std::vector<Species> &species) const;
 
@@ -181,6 +183,7 @@ class Domain {
 		MatrixXd E;			/* [V/m] electric field */
 		VectorXd n_e_BR;	/* [1/m^3] electron density (Boltzmann relation) */
 		VectorXd ln_Lambda;	/* [-] coulomb logarithm */
+		VectorXd T_tot;		/* [K] total temperature */
 
 	private:
 		void calc_node_volume();

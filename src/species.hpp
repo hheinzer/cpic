@@ -36,6 +36,8 @@ class Species {
 
 		double get_kinetic_energy() const;
 
+		Vector3d get_translation_temperature() const;
+
 		double get_maxwellian_velocity_magnitude(double T) const;
 
 		Vector3d get_maxwellian_velocity(double T) const;

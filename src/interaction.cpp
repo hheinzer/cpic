@@ -99,28 +99,113 @@ void DSMC_Bird::collide(Vector3d &v1, Vector3d &v2, double m1, double m2) const
 }
 
 
-DSMC_Nanbu::DSMC_Nanbu(Domain &domain, vector<Species> &species) :
+DSMC_Nanbu::DSMC_Nanbu(Domain &domain, vector<Species> &species, double T_e,
+		double n_e) :
 	domain{domain}, species{species}
 {
-	n_cells = domain.n_cells;
 	n_species = species.size();
+	n_cells = domain.n_cells;
+
+	lambda_D = sqrt(EPS0*K*T_e/(n_e*QE*QE));
 }
 
 void DSMC_Nanbu::apply(double dt)
 {
 	vector<vector<vector<Particle *>>> sic(n_species);
-	for(Species &s : species) {
+	for(int s = 0; s < n_species; ++s) {
 		vector<vector<Particle *>> pic(n_cells);
 
-		for(Particle &p : s.particles) {
+		for(Particle &p : species[s].particles) {
 			int c = domain.x_to_c(p.x);
 			pic[c].push_back(&p);
 		}
 
-		sic.push_back(pic);
+		sic[s] = pic;
 	}
 
 	/* perform like collisions */
+	for (int s = 0; s < n_species; ++s) {
+		for (int c = 0; c < n_cells; ++c) {
+
+			/* reference to the particles of species s in the cell c */
+			vector<Particle *> &pic = sic[s][c];
+
+			/* number particles */
+			int N = pic.size();
+
+			if (N > 1) {
+
+				/* shuffle the particles of species s in cell c */
+				std::shuffle(pic.begin(), pic.end(), rng.get_gen());
+
+				/* get total temperature in cell c */
+				double T_tot = domain.T_tot(c);
+
+				/* collide N/2 parts */
+				for (int i = 0; i + 1 < N; i += 2)
+					collide(pic[i]->v, pic[i + 1]->v, species[s].m, species[s].m,
+							T_tot, species[s].q, species[s].q, species[s].n_mean[c], dt);
+
+
+				/* handle odd particle numbers */
+				if (N%2 != 0)
+					collide(pic[N - 1]->v, pic[0]->v, species[s].m, species[s].m,
+							T_tot, species[s].q, species[s].q, species[s].n_mean[c], dt);
+			}
+
+		}
+	}
 
 	/* perform unlike collisions */
+}
+
+void DSMC_Nanbu::collide(Vector3d &v1, Vector3d &v2, double m1, double m2,
+		double T_tot, double q1, double q2, double n2, double dt) const
+{
+	/* relative velocity */
+	Vector3d g = v1 - v2;
+	double g_mag = g.norm();
+	double g_perp = sqrt(g(Y)*g(Y) + g(Z)*g(Z));
+
+	/* calculate coulomb logarithm */
+	double ln_Lambda = log(lambda_D*2*PI*EPS0*3*K*T_tot/fabs(q1*q2));
+
+	/* calculate mass ratio */
+	double mu = m1*m2/(m1 + m2);
+
+	/* calculate collision parameter */
+	double s = ln_Lambda/(4*PI)*pow(q1*q2/(EPS0*mu), 2)*n2*pow(g_mag, -3)*dt;
+
+	/* calculate cosine and sine of scattering angle */
+	double cos_xi;
+	if (s < 0.1) {
+		cos_xi = 1 + s*log(rng());
+	} else if (0.1 <= s && s < 3.0) {
+		double A_inv = 0.0056958 + 0.9560202*s - 0.508139*s*s
+			+ 0.47913906*s*s*s - 0.12788975*s*s*s*s + 0.02389567*s*s*s*s*s;
+
+		double A = 1.0/A_inv;
+
+		cos_xi = A_inv*log(exp(-A) + 2.0*rng()*sinh(A));
+	} else if (3.0 <= s && s < 6.0) {
+		double A = 3.0*exp(-s);
+
+		cos_xi = 1.0/A*log(exp(-A) + 2.0*rng()*sinh(A));
+	} else {
+		cos_xi = 2.0*rng() - 1.0;
+	}
+
+	double sin_xi = sqrt(1 - cos_xi*cos_xi);
+
+	/* calculate binary collision parameter */
+	double eps = 2*PI*rng();
+	Vector3d h = {
+		g_perp*cos(eps),
+		-(g(Y)*g(X)*cos(eps) + g_mag*g(Z)*sin(eps))/g_perp,
+		-(g(Z)*g(X)*cos(eps) - g_mag*g(Y)*sin(eps))/g_perp
+	};
+
+	/* perfom binary collision */
+	v1 -= m2/(m1 + m2)*(g*(1 - cos_xi) + h*sin_xi);
+	v2 += m1/(m1 + m2)*(g*(1 - cos_xi) + h*sin_xi);
 }

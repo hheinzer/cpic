@@ -46,6 +46,14 @@ double Species::get_kinetic_energy() const
 	return 0.5*m*E_kin;
 }
 
+Vector3d Species::get_translation_temperature() const
+{
+	Vector3d c2_mean = Vector3d::Zero();
+	for(const Particle &p : particles)
+		c2_mean.array() += p.v.array().pow(2);
+	return m/(K*get_sim_count())*c2_mean;
+}
+
 double Species::get_maxwellian_velocity_magnitude(double T) const
 {
 	return get_maxwellian_velocity(T).norm();

@@ -12,8 +12,8 @@ using namespace Eigen;
 using PBC = ParticleBCtype;
 using FBC = FieldBCtype;
 
-const double ne = 1e11;							/* [1/m^3] */
-const double Te = 100;							/* [K] */
+const double ne = 1e20;							/* [1/m^3] */
+const double Te = 1.5*EvToK;					/* [K] */
 const double Ty = Te/(1.0/3.0*1.3+2.0/3.0);		/* [K] */
 const double Tx = 1.3*Ty;						/* [K] */
 
@@ -25,7 +25,7 @@ void save_analytical_solution()
 			/(8*PI*sqrt(2)*pow(EPS0, 2)*sqrt(ME)*pow(K*Te, 1.5))));
 
 	double t_hat_end = 12;
-	double dt_hat = 0.02;
+	double dt_hat = 12.0/100.0;
 
 	double dT0 = Tx - Ty;
 
@@ -53,13 +53,13 @@ int main()
 	save_analytical_solution();
 
 	Vector3d x_min, x_max, x_mid;
-	x_min << -0.02, -0.02, -0.02;
-	x_max <<  0.02,  0.02,  0.02;
+	x_min << -0.0005, -0.0005, -0.0005;
+	x_max <<  0.0005,  0.0005,  0.0005;
 
-	Domain domain("test/simulation/box_dsmc_nanbu", 21, 21, 21);
+	Domain domain("test/simulation/box_dsmc_nanbu", 2, 2, 2);
 	domain.set_dimensions(x_min, x_max);
-	domain.set_time_step(1e-8);
-	domain.set_iter_max(1000);
+	domain.set_time_step(1e-11);
+	domain.set_iter_max(800);
 
 	domain.set_bc_at(Xmin, BC(PBC::Periodic, FBC::Periodic));
 	domain.set_bc_at(Xmax, BC(PBC::Periodic, FBC::Periodic));
@@ -69,12 +69,12 @@ int main()
 	domain.set_bc_at(Zmax, BC(PBC::Periodic, FBC::Periodic));
 
 	vector<Species> species;
-	species.push_back(Species("e-", ME, -QE, 1e2, domain));
+	species.push_back(Species("e-", ME, -QE, 1e5, domain));
 
 	species[0].add_warm_box(x_min, x_max, ne, {0, 0, 0}, {Tx, Ty, Ty});
 
 	vector<unique_ptr<Interaction>> interactions;
-	interactions.push_back(make_unique<DSMC_Nanbu>(domain, species[0]));
+	interactions.push_back(make_unique<DSMC_Nanbu>(domain, species, Te, ne));
 
 	//Solver solver(domain, 10000, 1e-4);
 
@@ -85,27 +85,30 @@ int main()
 		//solver.calc_potential();
 		//solver.calc_electric_field();
 
-		for(auto &interaction : interactions)
-			interaction->apply(domain.get_time_step());
-
 		for(Species &sp : species) {
 			sp.push_particles_leapfrog();
 			//sp.remove_dead_particles();
 			sp.calc_number_density();
+			sp.sample_moments();
+			sp.calc_gas_properties();
 		}
 
+		domain.calc_total_temperature(species);
+
+		for(auto &interaction : interactions)
+			interaction->apply(domain.get_time_step());
+
 		if (domain.get_iter()%10 == 0 || domain.is_last_iter()) {
-			for(Species &sp : species) {
-				sp.sample_moments();
-				sp.calc_gas_properties();
-				sp.calc_macroparticle_count();
-			}
+			//for(Species &sp : species) {
+			//	sp.calc_macroparticle_count();
+			//}
+			//domain.calc_coulomb_log(species[0]);
 
 			domain.print_info(species);
 			domain.write_statistics(species);
-			domain.save_fields(species);
-			domain.save_particles(species, 1000);
-			domain.save_velocity_histogram(species);
+			//domain.save_fields(species);
+			//domain.save_particles(species, 1000);
+			//domain.save_velocity_histogram(species);
 		}
 	}
 }

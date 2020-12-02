@@ -20,12 +20,13 @@ Domain::Domain(string prefix, int ni, int nj, int nk) :
 
 	wtime_start = chrono::high_resolution_clock::now();
 
-	V_node = VectorXd::Zero(n_nodes);
-	rho    = VectorXd::Zero(n_nodes);
-	phi    = VectorXd::Zero(n_nodes);
-	E      = MatrixXd::Zero(n_nodes, 3);
-	n_e_BR = VectorXd::Zero(n_nodes);
-	ln_Lambda = VectorXd::Zero(n_nodes);
+	V_node		= VectorXd::Zero(n_nodes);
+	rho    		= VectorXd::Zero(n_nodes);
+	phi    		= VectorXd::Zero(n_nodes);
+	E      		= MatrixXd::Zero(n_nodes, 3);
+	n_e_BR 		= VectorXd::Zero(n_nodes);
+	ln_Lambda	= VectorXd::Zero(n_nodes);
+	T_tot		= VectorXd::Zero(n_nodes);
 }
 
 Domain::~Domain()
@@ -344,19 +345,25 @@ void Domain::check_formulation(double n_e, double T_e) const
 		 << (dt < 1/omega_p ? "true" : "false") << endl << endl;
 }
 
-void Domain::calc_coulomb_log(std::vector<Species> &species, Species &e)
+void Domain::calc_total_temperature(std::vector<Species> &species)
+{
+	T_tot.setZero();
+	VectorXd n_tot = VectorXd::Zero(T_tot.size());
+	for (const Species &s : species) {
+		T_tot.array() += s.n_mean.array()*s.T.array();
+		n_tot += s.n_mean;
+	}
+	T_tot.array() /= n_tot.array();
+
+	T_tot = T_tot.unaryExpr([&](double x){
+			return isfinite(x) ? (x > 0 ? x : 0) : 0; });
+}
+
+void Domain::calc_coulomb_log(Species &e)
 {
 	VectorXd lambda_D = sqrt(EPS0*K*e.T.array()/(e.n_mean.array()*QE*QE));
 
-	VectorXd T = VectorXd::Zero(e.T.size());
-	VectorXd n_tot = VectorXd::Zero(e.n_mean.size());
-	for (const Species &s : species) {
-		T.array() += s.n_mean.array()*s.T.array();
-		n_tot += s.n_mean;
-	}
-	T.array() /= n_tot.array();
-
-	ln_Lambda = log(lambda_D.array()*2*PI*EPS0*3*K*T.array()/(QE*QE));
+	ln_Lambda = log(lambda_D.array()*2*PI*EPS0*3*K*T_tot.array()/(QE*QE));
 
 	ln_Lambda = ln_Lambda.unaryExpr([&](double x){
 			return isfinite(x) ? (x > 0 ? x : 0) : 0; });
@@ -389,7 +396,10 @@ void Domain::write_statistics(std::vector<Species> &species)
 				  << ",Ix." << sp.name
 				  << ",Iy." << sp.name
 				  << ",Iz." << sp.name
-				  << ",E_kin." << sp.name;
+				  << ",E_kin." << sp.name
+				  << ",Tx." << sp.name
+				  << ",Ty." << sp.name
+				  << ",Tz." << sp.name;
 		}
 		stats << ",E_pot,E_tot" << endl;
 	}
@@ -400,12 +410,16 @@ void Domain::write_statistics(std::vector<Species> &species)
 	for(const Species &sp : species) {
 		double E_kin = sp.get_kinetic_energy();
 		Vector3d I = sp.get_momentum();
+		Vector3d T_trans = sp.get_translation_temperature();
 		stats << sp.get_sim_count() << ","
 			  << sp.get_real_count() << ","
 			  << I(X) << ","
 			  << I(Y) << ","
 			  << I(Z) << ","
-			  << E_kin << ",";
+			  << E_kin << ","
+			  << T_trans(X) << ","
+			  << T_trans(Y) << ","
+			  << T_trans(Z) << ",";
 
 		E_tot += E_kin;
 	}
@@ -464,6 +478,11 @@ void Domain::save_fields(std::vector<Species> &species) const
 	out << "<DataArray Name=\"ln_Lambda\" NumberOfComponents=\"1\" "
 		<< "format=\"ascii\" type=\"Float64\">\n";
 	out << ln_Lambda;
+	out << "</DataArray>\n";
+
+	out << "<DataArray Name=\"T_tot\" NumberOfComponents=\"1\" "
+		<< "format=\"ascii\" type=\"Float64\">\n";
+	out << T_tot;
 	out << "</DataArray>\n";
 
 	for (const Species &sp : species) {
