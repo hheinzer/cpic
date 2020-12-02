@@ -24,6 +24,8 @@ class RandomNumberGenerator {
 
 		double normal() {return nrm(gen);}
 
+		std::mt19937& get_gen() {return gen;}
+
 	private:
 		std::mt19937 gen;
 		std::uniform_real_distribution<double> uni;

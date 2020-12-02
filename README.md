@@ -16,9 +16,13 @@ Now you are all set, just run `make` in the root directory and the code should c
 
 ![](img/vlasov.gif)
 
-## Two Oxygen Velocity Distributions Merging (DSMC Collisions)
+## Two Oxygen Velocity Distributions Merging (DSMC Bird)
 
 ![](img/dsmc.gif)
+
+## Electron-Electron Relaxation Coulomb Collisions (DSMC Nanbu)
+
+![](img/relax.pdf)
 
 ## Plasma Sheath, Comparison between Fully Kinetic vs. Boltzmann-Electron Model
 
