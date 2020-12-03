@@ -12,22 +12,25 @@ using namespace Eigen;
 using PBC = ParticleBCtype;
 using FBC = FieldBCtype;
 
-const double ne = 1e20;							/* [1/m^3] */
-const double Te = 1.5*EvToK;					/* [K] */
-const double Ty = Te/(1.0/3.0*1.3+2.0/3.0);		/* [K] */
-const double Tx = 1.3*Ty;						/* [K] */
+const double n    = 1e20;			/* [1/m^3] */
+const double Te   = 1.5*EvToK;		/* [K] */
+const double Ti   = Te/2.0; 		/* [K] */
+const double Tinf = (Te + Ti)/2;	/* [K] */
+const double me   = ME;				/* [kg] */
+const double mi   = 4*ME;			/* [kg] */
 
 void save_analytical_solution()
 {
-	double lambda_D = sqrt(EPS0*K*Te/(ne*QE*QE));
-	double ln_Lambda = log(lambda_D*2*PI*EPS0*3*K*Te/(QE*QE));
-	double tau0 = 1/((ne*pow(QE, 4)*ln_Lambda
-			/(8*PI*sqrt(2)*pow(EPS0, 2)*sqrt(ME)*pow(K*Te, 1.5))));
+	double lambda_D = sqrt(EPS0*K*Tinf/(n*QE*QE));
+	double ln_Lambda = log(lambda_D*2*PI*EPS0*3*K*Tinf/(QE*QE));
+	double mu = me*mi/(me + mi);
+	double tau0 = 1/(n*pow(QE, 4)*ln_Lambda
+			/(4*PI*pow(EPS0, 2)*sqrt(mu)*pow(K*Tinf, 1.5)));
 
-	double t_hat_end = 12;
-	double dt_hat = 12.0/100.0;
+	double t_hat_end = 50;
+	double dt_hat = t_hat_end/100.0;
 
-	double dT0 = Tx - Ty;
+	double dT0 = Te - Ti;
 
 	string fname = "test/simulation/nanbu_analytic.csv";
 	ofstream out(fname);
@@ -36,13 +39,13 @@ void save_analytical_solution()
 		exit(EXIT_FAILURE);
 	}
 
-	out << "t,Tx,Ty\n";
+	out << "time,Te,Ti\n";
 
 	for (double t_hat = 0; t_hat <= t_hat_end; t_hat += dt_hat) {
 		double t = t_hat*tau0;
-		double dT = dT0*exp(-8/(5*sqrt(2*PI))*t_hat);
+		double dT = dT0*exp(-2/(5*sqrt(2*PI))*t_hat);
 
-		out << t << ',' << Te + 2.0/3.0*dT << ',' << Te - 1.0/3.0*dT  << endl;
+		out << t << ',' << Tinf + dT/2.0 << ',' << Tinf - dT/2.0 << endl;
 	}
 
 	out.close();
@@ -69,16 +72,18 @@ int main()
 	domain.set_bc_at(Zmax, BC(PBC::Periodic, FBC::Periodic));
 
 	vector<Species> species;
-	species.push_back(Species("e-", ME, -QE, 1e5, domain));
+	species.push_back(Species("e-", me, -QE, 1e6, domain));
+	species.push_back(Species("I+", mi,  QE, 1e6, domain));
 
-	species[0].add_warm_box(x_min, x_max, ne, {0, 0, 0}, {Tx, Ty, Ty});
+	species[0].add_warm_box(x_min, x_max, n, {0, 0, 0}, Te);
+	species[1].add_warm_box(x_min, x_max, n, {0, 0, 0}, Ti);
 
 	vector<unique_ptr<Interaction>> interactions;
-	interactions.push_back(make_unique<DSMC_Nanbu>(domain, species, Te, ne));
+	interactions.push_back(make_unique<DSMC_Nanbu>(domain, species, Te, n));
 
 	//Solver solver(domain, 10000, 1e-4);
 
-	domain.check_formulation(ne, Te);
+	domain.check_formulation(n, Te);
 
 	while (domain.advance_time()) {
 		//domain.calc_charge_density(species);
