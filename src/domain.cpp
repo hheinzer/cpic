@@ -397,6 +397,7 @@ void Domain::write_statistics(std::vector<Species> &species)
 				  << ",Iy." << sp.name
 				  << ",Iz." << sp.name
 				  << ",E_kin." << sp.name
+				  << ",T." << sp.name
 				  << ",Tx." << sp.name
 				  << ",Ty." << sp.name
 				  << ",Tz." << sp.name;
@@ -417,6 +418,7 @@ void Domain::write_statistics(std::vector<Species> &species)
 			  << I(Y) << ","
 			  << I(Z) << ","
 			  << E_kin << ","
+			  << T_trans.sum()/3.0 << ","
 			  << T_trans(X) << ","
 			  << T_trans(Y) << ","
 			  << T_trans(Z) << ",";

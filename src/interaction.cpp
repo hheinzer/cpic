@@ -144,19 +144,127 @@ void DSMC_Nanbu::apply(double dt)
 				/* collide N/2 parts */
 				for (int i = 0; i + 1 < N; i += 2)
 					collide(pic[i]->v, pic[i + 1]->v, species[s].m, species[s].m,
-							T_tot, species[s].q, species[s].q, species[s].n_mean[c], dt);
+						T_tot, species[s].q, species[s].q, species[s].n_mean[c], dt);
 
 
 				/* handle odd particle numbers */
 				if (N%2 != 0)
 					collide(pic[N - 1]->v, pic[0]->v, species[s].m, species[s].m,
-							T_tot, species[s].q, species[s].q, species[s].n_mean[c], dt);
+						T_tot, species[s].q, species[s].q, species[s].n_mean[c], dt);
 			}
 
 		}
 	}
 
 	/* perform unlike collisions */
+	for (int s1 = 0; s1 < n_species - 1; ++s1) {
+		for (int s2 = s1 + 1; s2 < n_species; ++s2) {
+			for (int c = 0; c < n_cells; ++c) {
+
+				/* reference to the particles of species s1/s2 in the cell c */
+				vector<Particle *> &pic1 = sic[s1][c];
+				vector<Particle *> &pic2 = sic[s2][c];
+
+				/* number particles */
+				int N1 = pic1.size();
+				int N2 = pic2.size();
+
+				if (N1 == 0 || N2 == 0) {
+					break;
+
+				} else if (N1 == N2) {
+
+					/* shuffle the particles of species s1/s2 in cell c */
+					std::shuffle(pic1.begin(), pic1.end(), rng.get_gen());
+					std::shuffle(pic2.begin(), pic2.end(), rng.get_gen());
+
+					/* get total temperature in cell c */
+					double T_tot = domain.T_tot(c);
+
+					/* collide N1 == N2 parts */
+					for (int i = 0; i < N1; ++i)
+						collide(pic1[i]->v, pic2[i]->v,
+								species[s1].m, species[s2].m, T_tot,
+								species[s1].q, species[s2].q,
+								species[s2].n_mean[c], dt);
+
+				} else if (N1 > N2) {
+
+					/* shuffle the particles of species s1/s2 in cell c */
+					std::shuffle(pic1.begin(), pic1.end(), rng.get_gen());
+					std::shuffle(pic2.begin(), pic2.end(), rng.get_gen());
+
+					/* get total temperature in cell c */
+					double T_tot = domain.T_tot(c);
+
+					/* devide the particles into two groups */
+					int i = N1/N2;
+					double r = N1/(double)N2 - i;
+
+					/* number of particles in group 1 */
+					int N1g1 = (int)((i + 1)*r*N2);
+					int N2g1 = (int)(r*N2);
+
+					/* collide first group, particles of species 2 are
+					 * selected (i + 1) times */
+					for (int j = 0; j < N1g1; ++j)
+						collide(pic1[j]->v, pic2[(int)(j/(i + 1))]->v,
+								species[s1].m, species[s2].m, T_tot,
+								species[s1].q, species[s2].q,
+								species[s2].n_mean[c], dt);
+
+					/* number of particles in group 2 */
+					int N1g2 = (int)(i*(1 - r)*N2);
+					//int N2g2 = (int)((1 - r)*N2);
+
+					/* collide second group, particles of species 2 are
+					 * selected i times */
+					for (int j = 0; j < N1g2; ++j)
+						collide(pic1[N1g1 + j]->v, pic2[N2g1 + (int)(j/i)]->v,
+								species[s1].m, species[s2].m, T_tot,
+								species[s1].q, species[s2].q,
+								species[s2].n_mean[c], dt);
+
+				} else if (N2 > N1) {
+
+					/* shuffle the particles of species s1/s2 in cell c */
+					std::shuffle(pic2.begin(), pic2.end(), rng.get_gen());
+					std::shuffle(pic1.begin(), pic1.end(), rng.get_gen());
+
+					/* get total temperature in cell c */
+					double T_tot = domain.T_tot(c);
+
+					/* devide the particles into two groups */
+					int i = N2/N1;
+					double r = N2/(double)N1 - i;
+
+					/* number of particles in group 1 */
+					int N2g1 = (int)((i + 1)*r*N1);
+					int N1g1 = (int)(r*N1);
+
+					/* collide first group, particles of species 1 are
+					 * selected (i + 1) times */
+					for (int j = 0; j < N2g1; ++j)
+						collide(pic2[j]->v, pic1[(int)(j/(i + 1))]->v,
+								species[s2].m, species[s1].m, T_tot,
+								species[s2].q, species[s1].q,
+								species[s1].n_mean[c], dt);
+
+					/* number of particles in group 2 */
+					int N2g2 = (int)(i*(1 - r)*N1);
+					//int N1g2 = (int)((1 - r)*N1);
+
+					/* collide second group, particles of species 2 are
+					 * selected i times */
+					for (int j = 0; j < N2g2; ++j)
+						collide(pic2[N2g1 + j]->v, pic1[N1g1 + (int)(j/i)]->v,
+								species[s2].m, species[s1].m, T_tot,
+								species[s2].q, species[s1].q,
+								species[s1].n_mean[c], dt);
+				}
+			}
+		}
+	}
 }
 
 void DSMC_Nanbu::collide(Vector3d &v1, Vector3d &v2, double m1, double m2,

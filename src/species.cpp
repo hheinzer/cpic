@@ -59,18 +59,6 @@ double Species::get_maxwellian_velocity_magnitude(double T) const
 	return get_maxwellian_velocity(T).norm();
 }
 
-Vector3d Species::get_maxwellian_velocity(double T) const
-{
-	double v_th = sqrt(2*K*T/m);
-
-	Vector3d v;
-	for(int dim : {X, Y, Z}) {
-		v(dim) = sqrt(0.5)*v_th*rng.normal();
-	}
-
-	return v;
-}
-
 Vector3d Species::get_maxwellian_velocity(const vector<double> T) const
 {
 	Vector3d v;
@@ -78,7 +66,6 @@ Vector3d Species::get_maxwellian_velocity(const vector<double> T) const
 		double v_th = sqrt(2*K*T[dim]/m);
 		v(dim) = sqrt(0.5)*v_th*rng.normal();
 	}
-
 	return v;
 }
 
@@ -119,6 +106,8 @@ void Species::add_cold_box(const Vector3d &x1, const Vector3d &x2, double n,
 void Species::add_warm_box(const Vector3d &x1, const Vector3d &x2, double n,
 		const Vector3d &v_drift, const vector<double> T)
 {
+	assert(T.size() == 3);
+
 	double V_box = (x2 - x1).prod();
 	double n_real = n*V_box;
 	int n_sim = (int)(n_real/w_mp0);
@@ -129,12 +118,7 @@ void Species::add_warm_box(const Vector3d &x1, const Vector3d &x2, double n,
 			x = x1.array() + rng(3).array()*(x2 - x1).array();
 		} while(!domain.is_inside(x));
 
-		Vector3d v_M;
-		if (T.size() == 1) {
-			v_M = get_maxwellian_velocity(T[0]);
-		} else if (T.size() == 3) {
-			v_M = get_maxwellian_velocity(T);
-		}
+		Vector3d v_M = get_maxwellian_velocity(T);
 
 		add_particle(x, v_drift + v_M);
 	}

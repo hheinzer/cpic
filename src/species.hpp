@@ -40,7 +40,9 @@ class Species {
 
 		double get_maxwellian_velocity_magnitude(double T) const;
 
-		Vector3d get_maxwellian_velocity(double T) const;
+		Vector3d get_maxwellian_velocity(double T) const{
+			return get_maxwellian_velocity({T, T, T});
+		}
 
 		Vector3d get_maxwellian_velocity(const std::vector<double> T) const;
 
@@ -58,7 +60,7 @@ class Species {
 
 		void add_warm_box(const Vector3d &x1, const Vector3d &x2, double n,
 				const Vector3d &v_drift, double T) {
-			add_warm_box(x1, x2, n, v_drift, {T});
+			add_warm_box(x1, x2, n, v_drift, {T, T, T});
 		}
 
 		void push_particles_leapfrog();

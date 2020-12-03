@@ -22,7 +22,11 @@ Now you are all set, just run `make` in the root directory and the code should c
 
 ## Electron-Electron Relaxation Coulomb Collisions (DSMC Nanbu)
 
-![](img/relax.pdf)
+![](img/relax_ee.pdf)
+
+## Electron-Ion Relaxation Coulomb Collisions (DSMC Nanbu)
+
+![](img/relax_ei.pdf)
 
 ## Plasma Sheath, Comparison between Fully Kinetic vs. Boltzmann-Electron Model
 
