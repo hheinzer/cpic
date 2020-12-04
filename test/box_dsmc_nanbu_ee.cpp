@@ -59,7 +59,7 @@ int main()
 	Domain domain("test/simulation/box_dsmc_nanbu", 2, 2, 2);
 	domain.set_dimensions(x_min, x_max);
 	domain.set_time_step(1e-11);
-	domain.set_iter_max(80);
+	domain.set_iter_max(800);
 
 	domain.set_bc_at(Xmin, BC(PBC::Periodic, FBC::Periodic));
 	domain.set_bc_at(Xmax, BC(PBC::Periodic, FBC::Periodic));
@@ -69,25 +69,16 @@ int main()
 	domain.set_bc_at(Zmax, BC(PBC::Periodic, FBC::Periodic));
 
 	vector<Species> species;
-	species.push_back(Species("e-", ME, -QE, 1e5, domain));
+	species.push_back(Species("e-", ME, -QE, 0.5e6, domain));
 
 	species[0].add_warm_box(x_min, x_max, ne, {0, 0, 0}, {Tx, Ty, Ty});
 
 	vector<unique_ptr<Interaction>> interactions;
 	interactions.push_back(make_unique<DSMC_Nanbu>(domain, species, Te, ne));
 
-	//Solver solver(domain, 10000, 1e-4);
-
-	domain.check_formulation(ne, Te);
-
 	while (domain.advance_time()) {
-		//domain.calc_charge_density(species);
-		//solver.calc_potential();
-		//solver.calc_electric_field();
-
 		for(Species &sp : species) {
 			sp.push_particles_leapfrog();
-			//sp.remove_dead_particles();
 			sp.calc_number_density();
 			sp.sample_moments();
 			sp.calc_gas_properties();
@@ -99,16 +90,8 @@ int main()
 			interaction->apply(domain.get_time_step());
 
 		if (domain.get_iter()%10 == 0 || domain.is_last_iter()) {
-			//for(Species &sp : species) {
-			//	sp.calc_macroparticle_count();
-			//}
-			//domain.calc_coulomb_log(species[0]);
-
 			domain.print_info(species);
 			domain.write_statistics(species);
-			//domain.save_fields(species);
-			//domain.save_particles(species, 1000);
-			//domain.save_velocity_histogram(species);
 		}
 	}
 }

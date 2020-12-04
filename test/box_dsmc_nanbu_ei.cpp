@@ -23,14 +23,14 @@ void save_analytical_solution()
 {
 	double lambda_D = sqrt(EPS0*K*Tinf/(n*QE*QE));
 	double ln_Lambda = log(lambda_D*2*PI*EPS0*3*K*Tinf/(QE*QE));
-	double mu = me*mi/(me + mi);
-	double tau0 = 1/(n*pow(QE, 4)*ln_Lambda
-			/(4*PI*pow(EPS0, 2)*sqrt(mu)*pow(K*Tinf, 1.5)));
 
-	double t_hat_end = 50;
-	double dt_hat = t_hat_end/100.0;
+	double nu0 = pow(QE, 4)*n*ln_Lambda
+			/(8*sqrt(2)*PI*pow(EPS0, 2)*sqrt(me)*pow(K*Te, 1.5));
+	double nueq = 8.0/(3*sqrt(PI))*me/mi*pow(1 + me/mi*Ti/Te, -1.5)*nu0;
 
 	double dT0 = Te - Ti;
+
+	double t_end = 8e-9;
 
 	string fname = "test/simulation/nanbu_analytic.csv";
 	ofstream out(fname);
@@ -41,10 +41,8 @@ void save_analytical_solution()
 
 	out << "time,Te,Ti\n";
 
-	for (double t_hat = 0; t_hat <= t_hat_end; t_hat += dt_hat) {
-		double t = t_hat*tau0;
-		double dT = dT0*exp(-2/(5*sqrt(2*PI))*t_hat);
-
+	for (double t = 0; t <= t_end; t += t_end/100.0) {
+		double dT = dT0*exp(-2*nueq*t);
 		out << t << ',' << Tinf + dT/2.0 << ',' << Tinf - dT/2.0 << endl;
 	}
 
@@ -81,18 +79,9 @@ int main()
 	vector<unique_ptr<Interaction>> interactions;
 	interactions.push_back(make_unique<DSMC_Nanbu>(domain, species, Te, n));
 
-	//Solver solver(domain, 10000, 1e-4);
-
-	domain.check_formulation(n, Te);
-
 	while (domain.advance_time()) {
-		//domain.calc_charge_density(species);
-		//solver.calc_potential();
-		//solver.calc_electric_field();
-
 		for(Species &sp : species) {
 			sp.push_particles_leapfrog();
-			//sp.remove_dead_particles();
 			sp.calc_number_density();
 			sp.sample_moments();
 			sp.calc_gas_properties();
@@ -104,16 +93,8 @@ int main()
 			interaction->apply(domain.get_time_step());
 
 		if (domain.get_iter()%10 == 0 || domain.is_last_iter()) {
-			//for(Species &sp : species) {
-			//	sp.calc_macroparticle_count();
-			//}
-			//domain.calc_coulomb_log(species[0]);
-
 			domain.print_info(species);
 			domain.write_statistics(species);
-			//domain.save_fields(species);
-			//domain.save_particles(species, 1000);
-			//domain.save_velocity_histogram(species);
 		}
 	}
 }
