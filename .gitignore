@@ -1,7 +1,4 @@
 bin/**
 obj/**
 lib/**
-**/*.vti
-**/*.vtp
-**/*.csv
 test/simulation/**
