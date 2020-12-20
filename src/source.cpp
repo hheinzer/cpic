@@ -161,13 +161,16 @@ void WarmBeam::sample()
 
 		double z_star;
 		if (V1 > 0) {
-			do {
+			while (true) {
 				if (1/(2*a*sqrt(PI) + 1) > rng()) {
 					z_star = -sqrt(-log(rng()));
 				} else {
 					z_star = 1/sqrt(2)*rng.normal();
 				}
-			} while((a - z_star)/a <= rng());
+
+				if ((a - z_star)/a > rng())
+					break;
+			}
 		} else {
 			z_star = -sqrt(-log(rng()));
 		}
