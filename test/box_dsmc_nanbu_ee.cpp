@@ -71,7 +71,7 @@ int main()
 	vector<Species> species;
 	species.push_back(Species("e-", ME, -QE, 0.5e6, domain));
 
-	species[0].add_warm_box(x_min, x_max, ne, {0, 0, 0}, {Tx, Ty, Ty});
+	species[0].add_warm_box(x_min, x_max, ne, {1e6, 0, 0}, {Tx, Ty, Ty});
 
 	vector<unique_ptr<Interaction>> interactions;
 	interactions.push_back(make_unique<DSMC_Nanbu>(domain, species, Te, ne));
@@ -92,6 +92,7 @@ int main()
 		if (domain.get_iter()%10 == 0 || domain.is_last_iter()) {
 			domain.print_info(species);
 			domain.write_statistics(species);
+			domain.save_velocity_histogram(species);
 		}
 	}
 }

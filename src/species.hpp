@@ -90,7 +90,7 @@ class Species {
 		MatrixXd v_stream;
 
 	private:
-		double mu = 0.0;
+		double mu = 0.0;	/* time averaging factor */
 
 		VectorXd n_sum, nuu_sum, nvv_sum, nww_sum;
 		MatrixXd nv_sum;

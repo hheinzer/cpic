@@ -19,7 +19,7 @@ enum class FieldBCtype {Dirichlet, Neumann, Periodic};
 
 enum class ParticleBCtype {Specular, Open, Diffuse, Symmetric, Periodic};
 
-class Particle;
+struct Particle;
 class Species;
 class Object;
 

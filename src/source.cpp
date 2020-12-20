@@ -167,7 +167,7 @@ void WarmBeam::sample()
 				} else {
 					z_star = 1/sqrt(2)*rng.normal();
 				}
-			} while((a - z_star)/z_star <= rng());
+			} while((a - z_star)/a <= rng());
 		} else {
 			z_star = -sqrt(-log(rng()));
 		}
