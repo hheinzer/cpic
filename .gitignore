@@ -4,4 +4,4 @@ lib/**
 **/*.vti
 **/*.vtp
 **/*.csv
-
+test/simulation/**

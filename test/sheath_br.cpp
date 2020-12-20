@@ -32,7 +32,7 @@ void save_analytical_solution()
 
 	double chi_0 = -QE*phi_0/(K*Te);
 
-	string fname = "test/sheath_br/sheath_analytic.csv";
+	string fname = "test/simulation/sheath_analytic.csv";
 	ofstream out(fname);
 	if (!out.is_open()) {
 		cerr << "Could not open '" << fname << "'" << endl;
