@@ -90,7 +90,7 @@ void Species::add_particle(const Vector3d &x, const Vector3d &v, double dt, doub
 void Species::add_cold_box(const Vector3d &x1, const Vector3d &x2, double n,
 		const Vector3d &v_drift)
 {
-	double V_box = (x2 - x1).prod();
+	double V_box = abs((x2 - x1).prod());
 	double n_real = n*V_box;
 	int n_sim = (int)(n_real/w_mp0);
 

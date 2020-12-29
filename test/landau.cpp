@@ -13,15 +13,14 @@ using FBC = FieldBCtype;
 
 int main()
 {
-	Vector3d x_min, x_max, x_mid;
+	Vector3d x_min, x_max;
 	x_min <<   0,   0,   0;
 	x_max << 0.1, 0.1, 0.1;
-	x_mid << (x_max + x_min)/2;
 
-	Domain domain("test/simulation/box", 21, 21, 21);
+	Domain domain("test/simulation/landau", 41, 41, 41);
 	domain.set_dimensions(x_min, x_max);
 	domain.set_time_step(1e-9);
-	domain.set_iter_max(2000);
+	domain.set_iter_max(10000);
 
 	domain.set_bc_at(Xmin, BC(PBC::Symmetric, FBC::Dirichlet));
 	domain.set_bc_at(Xmax, BC(PBC::Symmetric, FBC::Dirichlet));
@@ -37,7 +36,8 @@ int main()
 	const double n = 1e11;
 
 	species[0].add_cold_box(x_min, x_max, n, {0, 0, 0});
-	species[1].add_cold_box(x_min, x_mid, n, {0, 0, 0});
+	species[1].add_warm_box(x_min, x_max, n/2, {-50000, 0, 0}, 10);
+	species[1].add_warm_box(x_min, x_max, n/2, { 50000, 0, 0}, 10);
 
 	for(Species &sp : species)
 		sp.calc_number_density();
@@ -56,7 +56,7 @@ int main()
 			sp.calc_number_density();
 		}
 
-		if (domain.get_iter()%10 == 0 || domain.is_last_iter()) {
+		if (domain.get_iter()%1000 == 0 || domain.is_last_iter()) {
 			for(Species &sp : species) {
 				sp.sample_moments();
 				sp.calc_gas_properties();
@@ -69,7 +69,7 @@ int main()
 			domain.write_statistics(species);
 			domain.save_fields(species);
 			//domain.save_particles(species, 1000);
-			//domain.save_velocity_histogram(species);
+			domain.save_velocity_histogram(species);
 		}
 	}
 }

@@ -83,7 +83,7 @@ int main()
 				sp.calc_gas_properties();
 				sp.calc_macroparticle_count();
 			}
-			domain.calc_coulomb_log(species, species[1]);
+			domain.calc_coulomb_log(species[1]);
 
 			domain.print_info(species);
 			domain.write_statistics(species);

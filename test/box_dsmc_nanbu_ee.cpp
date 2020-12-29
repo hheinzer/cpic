@@ -24,10 +24,24 @@ void save_analytical_solution()
 	double tau0 = 1/((ne*pow(QE, 4)*ln_Lambda
 			/(8*PI*sqrt(2)*pow(EPS0, 2)*sqrt(ME)*pow(K*Te, 1.5))));
 
+    /*
+     * lambda_D = 9.10468e-07
+     * ln_Lambda = 7.26027
+     * tau0 = 6.54945e-10
+     */
+
 	double t_hat_end = 12;
-	double dt_hat = 12.0/100.0;
+	double dt_hat = 12.0/81.0;
 
 	double dT0 = Tx - Ty;
+
+	cout << "lambda_D = " << lambda_D << endl
+		 << "ln_Lambda = " << ln_Lambda << endl
+		 << "tau0 = " << tau0 << endl
+		 << "Te = " << Te << endl
+		 << "Tx = " << Tx << endl
+		 << "Ty = " << Ty << endl
+		 << "dT0 = " << dT0 << endl;
 
 	string fname = "test/simulation/nanbu_analytic.csv";
 	ofstream out(fname);
@@ -69,9 +83,9 @@ int main()
 	domain.set_bc_at(Zmax, BC(PBC::Periodic, FBC::Periodic));
 
 	vector<Species> species;
-	species.push_back(Species("e-", ME, -QE, 0.5e6, domain));
+	species.push_back(Species("e-", ME, -QE, 1e7, domain));
 
-	species[0].add_warm_box(x_min, x_max, ne, {1e6, 0, 0}, {Tx, Ty, Ty});
+	species[0].add_warm_box(x_min, x_max, ne, {0, 0, 0}, {Tx, Ty, Ty});
 
 	vector<unique_ptr<Interaction>> interactions;
 	interactions.push_back(make_unique<DSMC_Nanbu>(domain, species, Te, ne));
@@ -92,7 +106,7 @@ int main()
 		if (domain.get_iter()%10 == 0 || domain.is_last_iter()) {
 			domain.print_info(species);
 			domain.write_statistics(species);
-			domain.save_velocity_histogram(species);
+			//domain.save_velocity_histogram(species);
 		}
 	}
 }
