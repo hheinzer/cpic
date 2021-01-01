@@ -160,7 +160,7 @@ class Domain {
 
 		void calc_total_temperature(std::vector<Species> &species);
 
-		void calc_coulomb_log(Species &e);
+		void calc_coulomb_log(double T_e, double n_e);
 
 		void print_info(std::vector<Species> &species) const;
 

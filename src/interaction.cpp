@@ -277,6 +277,7 @@ void DSMC_Nanbu::collide(Vector3d &v1, Vector3d &v2, double m1, double m2,
 
 	/* calculate coulomb logarithm */
 	double ln_Lambda = log(lambda_D*2*PI*EPS0*3*K*T_tot/fabs(q1*q2));
+	if (ln_Lambda < 0.0) ln_Lambda = 0.0;
 
 	/* calculate mass ratio */
 	double mu = m1*m2/(m1 + m2);
@@ -316,4 +317,26 @@ void DSMC_Nanbu::collide(Vector3d &v1, Vector3d &v2, double m1, double m2,
 	/* perfom binary collision */
 	v1 -= m2/(m1 + m2)*(g*(1 - cos_xi) + h*sin_xi);
 	v2 += m1/(m1 + m2)*(g*(1 - cos_xi) + h*sin_xi);
+
+	if (!(isfinite(v1(X)) && isfinite(v1(Y)) && isfinite(v1(Z))) || !(isfinite(v2(X)) && isfinite(v2(Y)) && isfinite(v2(Z)))) {
+
+		cout << "m1    = " << m1 << endl
+			 << "m2    = " << m2 << endl
+			 << "T_tot = " << T_tot << endl
+			 << "q1    = " << q1 << endl
+			 << "q2    = " << q2 << endl
+			 << "n2    = " << n2 << endl
+			 << "dt    = " << dt << endl
+			 << "g     = " << g.transpose() << endl
+			 << "v1    = " << g.transpose() << endl
+			 << "v2    = " << g.transpose() << endl;
+
+		assert(isfinite(v1(X)));
+		assert(isfinite(v1(Y)));
+		assert(isfinite(v1(Z)));
+
+		assert(isfinite(v2(X)));
+		assert(isfinite(v2(Y)));
+		assert(isfinite(v2(Z)));
+	}
 }

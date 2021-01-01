@@ -16,7 +16,7 @@ void save_analytical_solution()
 {
 	double Te    = 1000;		/* [K] */
 	double v_I   = 11492.19;	/* [m/s] */
-	double m_I   = 16*AMU;		/* [kg] */
+	double m_I   = 54*AMU;		/* [kg] */
 	double n_ei  = 1e12;		/* [1/m^3] */
 	double x_L   = -0.03;		/* [m] */
 	double phi_0 = -0.1811;		/* [V] */
@@ -76,7 +76,7 @@ int main()
 	domain.set_bc_at(Zmax, BC(PBC::Periodic, FBC::Periodic));
 
 	vector<Species> species;
-	species.push_back(Species("O+", 16*AMU, QE, 10, domain));
+	species.push_back(Species("Xe+", 54*AMU, QE, 10, domain));
 
 	const double n = 1e12;
 
@@ -89,6 +89,8 @@ int main()
 
 	Solver solver(domain, 1000, 1e-4);
 	solver.set_reference_values(0, T*KToEv, n);
+
+	domain.check_formulation(n, T);
 
 	save_analytical_solution();
 

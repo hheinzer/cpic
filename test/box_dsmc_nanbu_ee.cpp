@@ -24,12 +24,6 @@ void save_analytical_solution()
 	double tau0 = 1/((ne*pow(QE, 4)*ln_Lambda
 			/(8*PI*sqrt(2)*pow(EPS0, 2)*sqrt(ME)*pow(K*Te, 1.5))));
 
-    /*
-     * lambda_D = 9.10468e-07
-     * ln_Lambda = 7.26027
-     * tau0 = 6.54945e-10
-     */
-
 	double t_hat_end = 12;
 	double dt_hat = 12.0/81.0;
 
@@ -42,6 +36,16 @@ void save_analytical_solution()
 		 << "Tx = " << Tx << endl
 		 << "Ty = " << Ty << endl
 		 << "dT0 = " << dT0 << endl;
+
+	/*
+	 * lambda_D = 9.10468e-07
+	 * ln_Lambda = 7.26027
+	 * tau0 = 6.54945e-10
+	 * Te = 17406.8
+	 * Tx = 20571.7
+	 * Ty = 15824.4
+	 * dT0 = 4747.31
+	 */
 
 	string fname = "test/simulation/nanbu_analytic.csv";
 	ofstream out(fname);
@@ -83,7 +87,7 @@ int main()
 	domain.set_bc_at(Zmax, BC(PBC::Periodic, FBC::Periodic));
 
 	vector<Species> species;
-	species.push_back(Species("e-", ME, -QE, 1e7, domain));
+	species.push_back(Species("e-", ME, -QE, 2e5, domain));
 
 	species[0].add_warm_box(x_min, x_max, ne, {0, 0, 0}, {Tx, Ty, Ty});
 

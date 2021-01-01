@@ -14,8 +14,8 @@ using FBC = FieldBCtype;
 
 int main()
 {
-	Vector3d x_min = {0.00, -0.0015, -0.0015};
-	Vector3d x_max = {0.03,  0.0015,  0.0015};
+	Vector3d x_min = {0.00, -0.00075, -0.00075};
+	Vector3d x_max = {0.03,  0.00075,  0.00075};
 
 	Domain domain("test/simulation/sheath", 21, 2, 2);
 	domain.set_dimensions(x_min, x_max);
@@ -30,25 +30,26 @@ int main()
 	domain.set_bc_at(Zmax, BC(PBC::Periodic, FBC::Periodic));
 
 	vector<Species> species;
-	species.push_back(Species("O+", 16*AMU,  QE, 10, domain));
-	species.push_back(Species("e-",     ME, -QE, 10, domain));
+	species.push_back(Species("Xe+", 54*AMU,  QE, 10, domain));
+	species.push_back(Species("e-",      ME, -QE, 10, domain));
 
 	const double n = 1e12;
 
 	vector<unique_ptr<Source>> sources;
-	Vector3d x1 = {0.0, -0.0015, -0.0015};
-	Vector3d x2 = {0.0,  0.0015,  0.0015};
+	Vector3d x1 = {0.0, -0.00075, -0.00075};
+	Vector3d x2 = {0.0,  0.00075,  0.00075};
 	Vector3d vi = {11492.19, 0, 0};
 	Vector3d ve = {0, 0, 0};
 	double   T  = 1000;
 	sources.push_back(make_unique<WarmBeam>(species[0], domain, x1, x2, vi, n, T));
 	sources.push_back(make_unique<WarmBeam>(species[1], domain, x1, x2, ve, n, T));
 
-	Solver solver(domain, 10000, 1e-4);
+	Solver solver(domain, 1000, 1e-4);
 
 	domain.check_formulation(n, T);
 
 	while (domain.advance_time()) {
+		domain.calc_charge_density(species);
 		solver.calc_potential();
 		solver.calc_electric_field();
 
@@ -61,12 +62,10 @@ int main()
 			sp.calc_number_density();
 		}
 
-		domain.calc_charge_density(species);
-
-		if (!domain.averaing_time() && domain.steady_state(species, 500, 0.01)) {
+		if (!domain.averaing_time() && domain.steady_state(species, 5000, 0.01)) {
 			domain.start_averaging_time();
 			for(Species &sp : species)
-				sp.start_time_averaging(5000);
+				sp.start_time_averaging(10000);
 		}
 
 		if (domain.get_iter()%1000 == 0 || domain.is_last_iter()) {
@@ -79,8 +78,8 @@ int main()
 			domain.print_info(species);
 			domain.write_statistics(species);
 			domain.save_fields(species);
-			domain.save_particles(species, 1000);
-			domain.save_velocity_histogram(species);
+			//domain.save_particles(species, 1000);
+			//domain.save_velocity_histogram(species);
 		}
 	}
 }

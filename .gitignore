@@ -2,6 +2,4 @@ bin/**
 obj/**
 lib/**
 test/simulation/**
-test/landau/**
-test/sheath/**
 doc/**

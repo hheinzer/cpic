@@ -359,11 +359,11 @@ void Domain::calc_total_temperature(std::vector<Species> &species)
 			return isfinite(x) ? (x > 0 ? x : 0) : 0; });
 }
 
-void Domain::calc_coulomb_log(Species &e)
+void Domain::calc_coulomb_log(double T_e, double n_e)
 {
-	VectorXd lambda_D = sqrt(EPS0*K*e.T.array()/(e.n_mean.array()*QE*QE));
+	double lambda_D = sqrt(EPS0*K*T_e/(n_e*QE*QE));
 
-	ln_Lambda = log(lambda_D.array()*2*PI*EPS0*3*K*T_tot.array()/(QE*QE));
+	ln_Lambda = log(lambda_D*2*PI*EPS0*3*K*T_tot.array()/(QE*QE));
 
 	ln_Lambda = ln_Lambda.unaryExpr([&](double x){
 			return isfinite(x) ? (x > 0 ? x : 0) : 0; });

@@ -32,6 +32,28 @@ void save_analytical_solution()
 
 	double t_end = 8e-9;
 
+	cout << "lambda_D = " << lambda_D << endl
+		 << "ln_Lambda = " << ln_Lambda << endl
+		 << "nu0 = " << nu0 << endl
+		 << "nueq = " << nueq/nu0 << endl
+		 << "Te = " << Te << endl
+		 << "Ti = " << Ti << endl
+		 << "Tinf = " << Tinf << endl
+		 << "me = " << me << endl
+		 << "mi = " << mi << endl;
+
+	/*
+	 * lambda_D = 7.88489e-07
+	 * ln_Lambda = 6.82875
+	 * nu0 = 1.4361e+09
+	 * nueq = 4.52677e+08
+	 * Te = 17406.8
+	 * Ti = 8703.39
+	 * Tinf = 13055.1
+	 * me = 9.10938e-31
+	 * mi = 3.64375e-30
+	 * */
+
 	string fname = "test/simulation/nanbu_analytic.csv";
 	ofstream out(fname);
 	if (!out.is_open()) {
@@ -70,8 +92,8 @@ int main()
 	domain.set_bc_at(Zmax, BC(PBC::Periodic, FBC::Periodic));
 
 	vector<Species> species;
-	species.push_back(Species("e-", me, -QE, 1e6, domain));
-	species.push_back(Species("I+", mi,  QE, 1e6, domain));
+	species.push_back(Species("e-", me, -QE, 2e6, domain));
+	species.push_back(Species("I+", mi,  QE, 2e6, domain));
 
 	species[0].add_warm_box(x_min, x_max, n, {0, 0, 0}, Te);
 	species[1].add_warm_box(x_min, x_max, n, {0, 0, 0}, Ti);
